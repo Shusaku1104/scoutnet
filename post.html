@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - 投稿する</title>
+</head>
+<body>
+
+<h2>新規投稿</h2>
+
+<input id="title" placeholder="タイトル"><br><br>
+<textarea id="description" placeholder="内容"></textarea><br><br>
+
+<select id="category">
+    <option value="indoor">Indoor</option>
+    <option value="outdoor">Outdoor</option>
+</select><br><br>
+
+<button id="submitBtn">投稿する</button>
+
+<script>
+    document.getElementById("submitBtn").addEventListener("click", () => {
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const category = document.getElementById("category").value;
+
+        const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+
+        const newPost = {
+            id: Date.now(),
+            title,
+            description,
+            category,
+            likesUsers: [],
+            comments: []
+        };
+
+        posts.push(newPost);
+        localStorage.setItem("posts", JSON.stringify(posts));
+
+        alert("投稿しました！");
+        location.href = "index.html";
+    });
+</script>
+
+</body>
+</html>
