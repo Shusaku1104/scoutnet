@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - 投稿詳細</title>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #4E342E;
+        }
+
+        /* ナビバー */
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:#ffffff;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        nav a:hover {
+            color:#2E7D32;
+        }
+
+        /* カード */
+        .card {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #D7C4A3;
+            margin: 20px;
+            box-shadow: 0 4px 0 #D7C4A3;
+        }
+
+        h2 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2E7D32;
+            border-left: 6px solid #66BB6A;
+            padding-left: 10px;
+        }
+
+        .post-img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .like-btn {
+            background:#2E7D32;
+            color:white;
+            border:none;
+            padding:10px 16px;
+            border-radius:10px;
+            cursor:pointer;
+            font-weight:600;
+            box-shadow:0 3px 0 #1B5E20;
+        }
+
+        .comment-box {
+            width:100%;
+            padding:10px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-bottom:10px;
+        }
+
+        .comment {
+            background:#F1F8E9;
+            padding:10px;
+            border-radius:10px;
+            border:1px solid #C5E1A5;
+            margin-bottom:10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ScoutNet ナビバー -->
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html">ホーム</a>
+        <a href="edit.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
+
+<div class="card">
+    <h2>投稿詳細</h2>
+
+    <div id="postContent"></div>
+
+    <button id="likeBtn" class="like-btn">いいね</button>
+    <p id="likeCount" style="margin-top:10px;"></p>
+</div>
+
+<div class="card">
+    <h2>コメント</h2>
+
+    <textarea id="commentInput" class="comment-box" placeholder="コメントを書く…"></textarea>
+    <button id="commentBtn" class="like-btn">コメントする</button>
+
+    <div id="commentList" style="margin-top:20px;"></div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const postId = urlParams.get("id");
+
+    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const currentUser = localStorage.getItem("currentUser");
+
+    const post = posts.find(p => p.id == postId);
+
+    const postContent = document.getElementById("postContent");
+    const likeBtn = document.getElementById("likeBtn");
+    const likeCount = document.getElementById("likeCount");
+
+    if (!post) {
+        postContent.innerHTML = "<p>投稿が見つかりません。</p>";
+    } else {
+        if (post.images?.length) {
+            const img = document.createElement("img");
+            img.src = post.images[0];
+            img.className = "post-img";
+            postContent.appendChild(img);
+        }
+
+        postContent.innerHTML += `
+            <h3>${post.title}</h3>
+            <p>${post.description}</p>
+            <p>投稿者：<a href="profile.html?user=${post.author}">${post.author}</a></p>
+        `;
+
+        likeCount.textContent = `いいね：${post.likesUsers?.length || 0}`;
+    }
+
+    /* いいね機能 */
+    likeBtn.addEventListener("click", () => {
+        if (!post.likesUsers) post.likesUsers = [];
+
+        if (!post.likesUsers.includes(currentUser)) {
+            post.likesUsers.push(currentUser);
+        }
+
+        localStorage.setItem("posts", JSON.stringify(posts));
+        likeCount.textContent = `いいね：${post.likesUsers.length}`;
+    });
+
+    /* コメント機能 */
+    const commentInput = document.getElementById("commentInput");
+    const commentBtn = document.getElementById("commentBtn");
+    const commentList = document.getElementById("commentList");
+
+    if (!post.comments) post.comments = [];
+
+    function renderComments() {
+        commentList.innerHTML = "";
+        post.comments.forEach(c => {
+            const div = document.createElement("div");
+            div.className = "comment";
+            div.innerHTML = `<strong>${c.user}</strong><br>${c.text}`;
+            commentList.appendChild(div);
+        });
+    }
+
+    renderComments();
+
+    commentBtn.addEventListener("click", () => {
+        const text = commentInput.value.trim();
+        if (!text) return;
+
+        post.comments.push({ user: currentUser, text });
+        commentInput.value = "";
+
+        localStorage.setItem("posts", JSON.stringify(posts));
+        renderComments();
+    });
+</script>
+
+</body>
+</html>
