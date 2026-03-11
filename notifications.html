@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - 通知</title>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #4E342E;
+        }
+
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:#ffffff;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        nav a:hover {
+            color:#2E7D32;
+        }
+
+        .card {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #D7C4A3;
+            margin: 20px;
+            box-shadow: 0 4px 0 #D7C4A3;
+        }
+
+        h2 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2E7D32;
+            border-left: 6px solid #66BB6A;
+            padding-left: 10px;
+        }
+
+        .notification {
+            background:#F1F8E9;
+            padding:12px;
+            border-radius:12px;
+            border:1px solid #C5E1A5;
+            margin-bottom:10px;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html">ホーム</a>
+        <a href="edit.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
+
+<div class="card">
+    <h2>通知一覧</h2>
+    <div id="notificationList"></div>
+</div>
+
+<script>
+    const currentUser = localStorage.getItem("currentUser");
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+    const list = document.getElementById("notificationList");
+    const notes = users[currentUser]?.notifications || [];
+
+    if (notes.length === 0) {
+        list.innerHTML = "<p>通知はありません。</p>";
+    } else {
+        notes.slice().reverse().forEach(n => {
+            const div = document.createElement("div");
+            div.className = "notification";
+
+            if (n.type === "follow") {
+                div.textContent = `➕ ${n.from} さんにフォローされました`;
+            } else if (n.type === "like") {
+                div.textContent = `❤️ ${n.from} さんがあなたの投稿にいいねしました`;
+            } else if (n.type === "comment") {
+                div.textContent = `💬 ${n.from} さんがあなたの投稿にコメントしました`;
+            }
+
+            list.appendChild(div);
+        });
+    }
+</script>
+
+</body>
+</html>

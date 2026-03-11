@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - 新規登録</title>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
+        }
+
+        .container {
+            max-width:400px;
+            margin:60px auto;
+            background:white;
+            padding:30px;
+            border-radius:16px;
+            border:2px solid #D7C4A3;
+            box-shadow:0 4px 0 #D7C4A3;
+        }
+
+        h2 {
+            text-align:center;
+            color:#2E7D32;
+            margin-bottom:20px;
+        }
+
+        .input {
+            width:100%;
+            padding:12px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-bottom:16px;
+        }
+
+        .btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+        }
+
+        a {
+            color:#2E7D32;
+            text-decoration:none;
+            font-weight:600;
+            display:block;
+            text-align:center;
+            margin-top:10px;
+        }
+
+        .terms {
+            font-size:13px;
+            text-align:center;
+            margin-top:10px;
+            color:#4E342E;
+        }
+
+        .terms a {
+            color:#2E7D32;
+            text-decoration:underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🏕 ScoutNet</h2>
+
+    <input type="text" id="username" class="input" placeholder="ユーザー名">
+
+    <div class="terms">
+        アカウントを作成することで、<br>
+        <a href="rules.html">利用規約</a> に同意したものとみなします。
+    </div>
+
+    <button class="btn" id="signupBtn">登録する</button>
+
+    <a href="login.html">ログインはこちら</a>
+</div>
+
+<script>
+    document.getElementById("signupBtn").addEventListener("click", () => {
+        const name = document.getElementById("username").value.trim();
+        if (!name) return alert("ユーザー名を入力してください");
+
+        let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+        if (users[name]) {
+            alert("このユーザー名はすでに使われています");
+            return;
+        }
+
+        users[name] = {
+            icon:"",
+            bio:"",
+            following:[],
+            followers:[],
+            notifications:[]
+        };
+
+        localStorage.setItem("users", JSON.stringify(users));
+        localStorage.setItem("currentUser", name);
+
+        window.location.href = "index.html";
+    });
+</script>
+
+</body>
+</html>

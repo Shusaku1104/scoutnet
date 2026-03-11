@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - プロフィール</title>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 650px;
+            margin: auto;
+            color: #4E342E; /* 濃い茶 */
+        }
+
+        /* カードデザイン（木の枠 × 白背景） */
+        .card {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #D7C4A3; /* 薄茶 */
+            margin-bottom: 24px;
+            box-shadow: 0 4px 0 #D7C4A3;
+        }
+
+        h2, h3 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2E7D32; /* 緑 */
+            border-left: 6px solid #66BB6A; /* 明るい緑 */
+            padding-left: 10px;
+        }
+
+        .input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #D7C4A3;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #fff;
+            margin-bottom: 16px;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            background: #2E7D32; /* 緑 */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1B5E20;
+        }
+
+        /* 投稿カード */
+        .post {
+            background: white;
+            border: 1px solid #D7C4A3;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 0 #D7C4A3;
+        }
+
+        .post img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* フォロー一覧 */
+        .follow-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #D7C4A3;
+            font-size: 15px;
+        }
+
+        .unfollowBtn {
+            float: right;
+            background: #8D6E63; /* 茶色 */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* 通知 */
+        .notification {
+            background: #F1F8E9; /* 薄い緑 */
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #C5E1A5;
+        }
+    </style>
+</head>
+<body>
+<!-- ScoutNet ナビバー -->
+<nav style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 20px;
+    background:#ffffff;
+    border-bottom:2px solid #D7C4A3;
+    position:sticky;
+    top:0;
+    z-index:100;
+">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html" style="color:#4E342E; text-decoration:none;">ホーム</a>
+        <a href="edit.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
+        <a href="profile.html" style="color:#4E342E; text-decoration:none;">プロフィール</a>
+        <a href="notifications.html" style="color:#4E342E; text-decoration:none;">🔔 通知</a>
+    </div>
+</nav>
+<h2>ScoutNet プロフィール</h2>
+
+<!-- プロフィール編集 -->
+<div class="card">
+    <h3>ユーザー情報</h3>
+
+    <div style="text-align:center; margin-bottom:20px;">
+        <img id="iconPreview" src="" style="width:130px;height:130px;border-radius:50%;object-fit:cover;background:#ddd;">
+        <br><br>
+        <input type="file" id="iconInput" accept="image/*">
+    </div>
+
+    <label>名前</label>
+    <input type="text" id="username" class="input">
+
+    <label>自己紹介</label>
+    <textarea id="bio" class="input" rows="3"></textarea>
+
+    <button class="save-btn" id="saveProfile">保存する</button>
+</div>
+
+<!-- あなたの投稿 -->
+<div class="card">
+    <h3>あなたの投稿</h3>
+    <div id="myPosts"></div>
+</div>
+
+<!-- いいねした投稿 -->
+<div class="card">
+    <h3>いいねした投稿</h3>
+    <div id="likedPosts"></div>
+</div>
+
+<!-- フォロー中 -->
+<div class="card">
+    <h3>フォロー中</h3>
+    <div id="followingList"></div>
+</div>
+
+<!-- フォロワー -->
+<div class="card">
+    <h3>フォロワー</h3>
+    <div id="followersList"></div>
+</div>
+
+<!-- 通知 -->
+<div class="card">
+    <h3>通知</h3>
+    <div id="notificationList"></div>
+</div>
+
+<script>
+    const currentUser = localStorage.getItem("currentUser");
+
+    /* -------------------------
+       ユーザーデータ初期化
+    ------------------------- */
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+    if (!users[currentUser]) {
+        users[currentUser] = {
+            icon: "",
+            bio: "",
+            following: [],
+            followers: [],
+            notifications: []
+        };
+    }
+
+    /* -------------------------
+       プロフィール読み込み
+    ------------------------- */
+    const usernameInput = document.getElementById("username");
+    const bioInput = document.getElementById("bio");
+
+    usernameInput.value = localStorage.getItem("username") || currentUser;
+    bioInput.value = localStorage.getItem("bio") || "";
+
+    document.getElementById("saveProfile").addEventListener("click", () => {
+        localStorage.setItem("username", usernameInput.value);
+        localStorage.setItem("bio", bioInput.value);
+
+        users[currentUser].bio = bioInput.value;
+        localStorage.setItem("users", JSON.stringify(users));
+
+        alert("プロフィールを保存しました！");
+    });
+
+    /* -------------------------
+       投稿データ
+    ------------------------- */
+    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+
+    /* -------------------------
+       あなたの投稿一覧
+    ------------------------- */
+    const myPosts = posts.filter(p => p.author === currentUser);
+    const myPostsContainer = document.getElementById("myPosts");
+
+    if (myPosts.length === 0) {
+        myPostsContainer.innerHTML = "<p>投稿がありません。</p>";
+    } else {
+        myPosts.forEach(post => {
+            const div = document.createElement("div");
+            div.className = "post";
+
+            if (post.images?.length) {
+                const img = document.createElement("img");
+                img.src = post.images[0];
+                div.appendChild(img);
+            }
+
+            div.innerHTML += `<h4>${post.title}</h4><p>${post.description}</p>`;
+
+            div.addEventListener("click", () => {
+                window.location.href = "post.html?id=" + post.id;
+            });
+
+            myPostsContainer.appendChild(div);
+        });
+    }
+
+    /* -------------------------
+       いいねした投稿一覧
+    ------------------------- */
+    const liked = posts.filter(p => p.likesUsers?.includes(currentUser));
+    const likedContainer = document.getElementById("likedPosts");
+
+    if (liked.length === 0) {
+        likedContainer.innerHTML = "<p>まだいいねした投稿がありません。</p>";
+    } else {
+        liked.forEach(post => {
+            const div = document.createElement("div");
+            div.className = "post";
+
+            if (post.images?.length) {
+                const img = document.createElement("img");
+                img.src = post.images[0];
+                div.appendChild(img);
+            }
+
+            div.innerHTML += `<h4>${post.title}</h4><p>${post.description}</p>`;
+
+            div.addEventListener("click", () => {
+                window.location.href = "post.html?id=" + post.id;
+            });
+
+            likedContainer.appendChild(div);
+        });
+    }
+
+    /* -------------------------
+       フォロー中
+    ------------------------- */
+    const followingList = document.getElementById("followingList");
+    users[currentUser].following.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "follow-item";
+
+        div.innerHTML = `
+            ${name}
+            <button class="unfollowBtn" data-user="${name}">
+                解除
+            </button>
+        `;
+
+        followingList.appendChild(div);
+    });
+
+    /* -------------------------
+       フォロワー
+    ------------------------- */
+    const followersList = document.getElementById("followersList");
+    users[currentUser].followers.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "follow-item";
+        div.textContent = name;
+        followersList.appendChild(div);
+    });
+
+    /* -------------------------
+       通知一覧
+    ------------------------- */
+    const notificationList = document.getElementById("notificationList");
+    const notes = users[currentUser].notifications || [];
+
+    if (notes.length === 0) {
+        notificationList.innerHTML = "<p>通知はありません。</p>";
+    } else {
+        notes.forEach(n => {
+            const div = document.createElement("div");
+            div.className = "notification";
+
+            if (n.type === "follow") {
+                div.textContent = `➕ ${n.from} さんにフォローされました`;
+            } else if (n.type === "like") {
+                div.textContent = `❤️ ${n.from} さんがあなたの投稿にいいねしました`;
+            } else if (n.type === "comment") {
+                div.textContent = `💬 ${n.from} さんがあなたの投稿にコメントしました`;
+            }
+
+            notificationList.appendChild(div);
+        });
+    }
+
+    /* -------------------------
+       アイコン読み込み
+    ------------------------- */
+    const iconPreview = document.getElementById("iconPreview");
+    const savedIcon = localStorage.getItem("icon");
+
+    if (savedIcon) iconPreview.src = savedIcon;
+
+    document.getElementById("iconInput").addEventListener("change", function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            iconPreview.src = reader.result;
+            localStorage.setItem("icon", reader.result);
+
+            users[currentUser].icon = reader.result;
+            localStorage.setItem("users", JSON.stringify(users));
+        };
+        reader.readAsDataURL(file);
+    });
+
+    /* -------------------------
+       フォロー解除
+    ------------------------- */
+    document.addEventListener("click", e => {
+        if (e.target.classList.contains("unfollowBtn")) {
+            const target = e.target.dataset.user;
+
+            if (!confirm(`${target} のフォローを解除しますか？`)) return;
+
+            users[currentUser].following =
+                users[currentUser].following.filter(u => u !== target);
+
+            if (users[target]) {
+                users[target].followers =
+                    users[target].followers.filter(u => u !== currentUser);
+            }
+
+            localStorage.setItem("users", JSON.stringify(users));
+
+            alert("フォローを解除しました");
+            location.reload();
+        }
+    });
+</script>
+
+</body>
+</html>

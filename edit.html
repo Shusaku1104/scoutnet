@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>投稿編集</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #fff;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .input, .textarea {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 20px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #43A047;
+        }
+    </style>
+</head>
+<body>
+<!-- ScoutNet ナビバー -->
+<nav style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 20px;
+    background:#ffffff;
+    border-bottom:2px solid #D7C4A3;
+    position:sticky;
+    top:0;
+    z-index:100;
+">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html" style="color:#4E342E; text-decoration:none;">ホーム</a>
+        <a href="edit.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
+        <a href="profile.html" style="color:#4E342E; text-decoration:none;">プロフィール</a>
+        <a href="notifications.html" style="color:#4E342E; text-decoration:none;">🔔 通知</a>
+    </div>
+</nav>
+<h2>投稿を編集</h2>
+
+<form id="editForm">
+    <input type="text" id="title" class="input" placeholder="タイトル">
+    <input type="text" id="description" class="input" placeholder="説明">
+    <textarea id="content" class="textarea" rows="5" placeholder="本文を書く…"></textarea>
+
+    <button type="submit" class="save-btn">保存する</button>
+</form>
+
+<script>
+    // URL から id を取得
+    const params = new URLSearchParams(window.location.search);
+    const id = Number(params.get("id"));
+
+    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+    const post = posts.find(p => p.id === id);
+
+    if (!post) {
+        alert("投稿が見つかりません");
+        window.location.href = "index.html";
+    }
+
+    // 既存データをフォームに入れる
+    document.getElementById("title").value = post.title;
+    document.getElementById("description").value = post.description;
+    document.getElementById("content").value = post.content;
+
+    // 保存処理
+    document.getElementById("editForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        post.title = document.getElementById("title").value;
+        post.description = document.getElementById("description").value;
+        post.content = document.getElementById("content").value;
+
+        // 上書き保存
+        localStorage.setItem("posts", JSON.stringify(posts));
+
+        alert("変更を保存しました！");
+        window.location.href = post.genre + ".html"; // 元のジャンルページへ戻る
+    });
+</script>
+
+</body>
+</html>

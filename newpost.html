@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>新規投稿</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #fff;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        /* 入力欄 */
+        .input, .textarea {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 20px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        /* 画像プレビュー */
+        #preview img {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* 投稿ボタン */
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: #1976D2;
+        }
+
+        .genre {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- ScoutNet ナビバー -->
+<nav style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 20px;
+    background:#ffffff;
+    border-bottom:2px solid #D7C4A3;
+    position:sticky;
+    top:0;
+    z-index:100;
+">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html" style="color:#4E342E; text-decoration:none;">ホーム</a>
+        <a href="edit.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
+        <a href="profile.html" style="color:#4E342E; text-decoration:none;">プロフィール</a>
+        <a href="notifications.html" style="color:#4E342E; text-decoration:none;">🔔 通知</a>
+    </div>
+</nav>
+<h2>新規投稿</h2>
+
+<form id="postForm">
+
+    <!-- ① 画像選択 -->
+    <input id="images" type="file" accept="image/*" multiple>
+
+    <!-- ② プレビュー -->
+    <div id="preview"></div>
+
+    <!-- ③ タイトル -->
+    <input type="text" id="title" class="input" placeholder="タイトル">
+
+    <!-- ④ 説明 -->
+    <input type="text" id="description" class="input" placeholder="説明">
+
+    <!-- ⑤ 本文 -->
+    <textarea id="content" class="textarea" rows="5" placeholder="本文を書く…"></textarea>
+
+    <!-- ⑥ ジャンル -->
+    <div class="genre">
+        <label><input type="radio" name="genre" value="indoor"> インドア</label>
+        <label><input type="radio" name="genre" value="outdoor"> アウトドア</label>
+    </div>
+
+    <!-- ⑦ 投稿ボタン -->
+    <button type="submit" class="submit-btn">投稿する</button>
+
+</form>
+
+<script>
+    // 画像プレビュー
+    const input = document.getElementById('images');
+    const preview = document.getElementById('preview');
+
+    input.addEventListener('change', () => {
+        preview.innerHTML = "";
+
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = document.createElement('img');
+                img.src = reader.result;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    document.getElementById("postForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const content = document.getElementById("content").value;
+        const genre = document.querySelector("input[name='genre']:checked")?.value;
+
+        if (!genre) {
+            alert("ジャンルを選んでください");
+            return;
+        }
+
+        // 画像を Base64 に変換
+        const files = document.getElementById("images").files;
+        const images = [];
+
+        const readerPromises = Array.from(files).map(file => {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        });
+
+        Promise.all(readerPromises).then(results => {
+            results.forEach(img => images.push(img));
+
+            // 投稿データ
+            const post = {
+                id: Date.now(),
+                title,
+                description,
+                content,
+                genre,
+                images,
+                author: localStorage.getItem("currentUser")
+            };
+
+            // 保存
+            const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+            posts.push(post);
+            localStorage.setItem("posts", JSON.stringify(posts));
+
+            alert("投稿を保存しました！");
+            window.location.href = genre + ".html";
+        });
+    });
+</script>
+
+</body>
+</html>
