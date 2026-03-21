@@ -1,160 +1,64 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    <title>ScoutNet - ホーム</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoutNet - ログイン</title>
 
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
-            padding: 0;
             margin: 0;
+            padding: 40px;
+            text-align: center;
             color: #4E342E;
         }
 
-        /* ナビバー */
-        nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
-            background:#ffffff;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:0;
-            z-index:100;
-        }
-
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-        }
-
-        nav a:hover {
-            color:#2E7D32;
-        }
-
-        /* カード */
-        .card {
-            background: #FFFFFF;
+        .login-box {
+            background: white;
             padding: 20px;
             border-radius: 16px;
             border: 2px solid #D7C4A3;
-            margin: 20px;
+            width: 80%;
+            max-width: 350px;
+            margin: auto;
             box-shadow: 0 4px 0 #D7C4A3;
         }
 
-        h2 {
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #2E7D32;
-            border-left: 6px solid #66BB6A;
-            padding-left: 10px;
-        }
-
-        /* 投稿カード */
-        .post {
-            background: white;
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
             border: 1px solid #D7C4A3;
-            border-radius: 16px;
+        }
+
+        button {
+            width: 95%;
             padding: 12px;
-            margin-bottom: 16px;
-            box-shadow: 0 3px 0 #D7C4A3;
+            background: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 3px 0 #1B5E20;
             cursor: pointer;
-        }
-
-        .post img {
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-
-        /* カテゴリボタン */
-        .category-buttons {
-            display:flex;
-            gap:10px;
-            margin-bottom:20px;
-        }
-
-        .category-buttons a {
-            flex:1;
-            text-align:center;
-            padding:12px;
-            background:#2E7D32;
-            color:white;
-            border-radius:10px;
-            text-decoration:none;
-            font-weight:600;
-            box-shadow:0 3px 0 #1B5E20;
-        }
-
-        .category-buttons a:hover {
-            background:#388E3C;
         }
     </style>
 </head>
 <body>
 
-<!-- ScoutNet ナビバー -->
-<nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
+    <h2>ScoutNet ログイン</h2>
+
+    <div class="login-box">
+        <form action="home.html">
+            <input type="text" placeholder="ユーザー名" required>
+            <input type="password" placeholder="パスワード" required>
+            <button type="submit">ログイン</button>
+        </form>
     </div>
-
-    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
-        <a href="index.html">ホーム</a>
-        <a href="post.html">投稿する</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
-    </div>
-</nav>
-
-<!-- カテゴリ -->
-<div class="card">
-    <h2>カテゴリ</h2>
-
-    <div class="category-buttons">
-        <a href="indoor.html">🏠 Indoor</a>
-        <a href="outdoor.html">⛺ Outdoor</a>
-    </div>
-</div>
-
-<!-- 投稿一覧 -->
-<div class="card">
-    <h2>新着投稿</h2>
-    <div id="postList"></div>
-</div>
-
-<script>
-    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    const postList = document.getElementById("postList");
-
-    if (posts.length === 0) {
-        postList.innerHTML = "<p>まだ投稿がありません。</p>";
-    } else {
-        posts.slice().reverse().forEach(post => {
-            const div = document.createElement("div");
-            div.className = "post";
-
-            if (post.images?.length) {
-                const img = document.createElement("img");
-                img.src = post.images[0];
-                div.appendChild(img);
-            }
-
-            div.innerHTML += `<h3>${post.title}</h3><p>${post.description}</p>`;
-
-            div.addEventListener("click", () => {
-                window.location.href = "post.html?id=" + post.id;
-            });
-
-            postList.appendChild(div);
-        });
-    }
-</script>
 
 </body>
 </html>
