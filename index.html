@@ -15,14 +15,14 @@
             color: #4E342E;
         }
 
-        .login-box {
+        .box {
             background: white;
             padding: 20px;
             border-radius: 16px;
             border: 2px solid #D7C4A3;
             width: 80%;
             max-width: 350px;
-            margin: auto;
+            margin: 30px auto;
             box-shadow: 0 4px 0 #D7C4A3;
         }
 
@@ -46,17 +46,40 @@
             box-shadow: 0 3px 0 #1B5E20;
             cursor: pointer;
         }
+
+        h2 {
+            color: #2E7D32;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: #2E7D32;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
     <h2>ScoutNet ログイン</h2>
 
-    <div class="login-box">
+    <!-- ログインフォーム -->
+    <div class="box">
+        <h3>ログイン</h3>
         <form action="home.html">
             <input type="text" placeholder="ユーザー名" required>
             <input type="password" placeholder="パスワード" required>
             <button type="submit">ログイン</button>
+        </form>
+    </div>
+
+    <!-- 新規登録フォーム -->
+    <div class="box">
+        <h3>新規アカウント作成</h3>
+        <form action="home.html">
+            <input type="text" placeholder="ユーザー名" required>
+            <input type="password" placeholder="パスワード" required>
+            <input type="password" placeholder="パスワード（確認）" required>
+            <button type="submit">アカウント作成</button>
         </form>
     </div>
 
