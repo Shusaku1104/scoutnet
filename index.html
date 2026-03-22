@@ -82,6 +82,46 @@
             <button type="submit">アカウント作成</button>
         </form>
     </div>
+<script>
+// 新規登録処理
+function registerUser() {
+    const id = document.getElementById("reg-id").value;
+    const pass = document.getElementById("reg-pass").value;
+    const pass2 = document.getElementById("reg-pass2").value;
 
+    if (pass !== pass2) {
+        alert("パスワードが一致しません");
+        return false;
+    }
+
+    // 保存（localStorage）
+    localStorage.setItem("userId", id);
+    localStorage.setItem("userPass", pass);
+
+    alert("アカウント作成完了！");
+    return true;
+}
+
+// ログイン処理
+function loginUser() {
+    const inputId = document.getElementById("login-id").value;
+    const inputPass = document.getElementById("login-pass").value;
+
+    const savedId = localStorage.getItem("userId");
+    const savedPass = localStorage.getItem("userPass");
+
+    if (inputId !== savedId) {
+        alert("このIDは存在しません");
+        return false;
+    }
+
+    if (inputPass !== savedPass) {
+        alert("パスワードが違います");
+        return false;
+    }
+
+    return true; // home.html に進む
+}
+</script>
 </body>
 </html>
