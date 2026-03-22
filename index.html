@@ -65,9 +65,9 @@
     <!-- ログインフォーム -->
     <div class="box">
         <h3>ログイン</h3>
-        <form action="home.html">
-            <input type="text" placeholder="ユーザー名" required>
-            <input type="password" placeholder="パスワード" required>
+        <form action="home.html" onsubmit="return loginUser()">
+            <input id="login-id" type="text" placeholder="ユーザー名" required>
+            <input id="login-pass" type="password" placeholder="パスワード" required>
             <button type="submit">ログイン</button>
         </form>
     </div>
@@ -75,13 +75,14 @@
     <!-- 新規登録フォーム -->
     <div class="box">
         <h3>新規アカウント作成</h3>
-        <form action="home.html">
-            <input type="text" placeholder="ユーザー名" required>
-            <input type="password" placeholder="パスワード" required>
-            <input type="password" placeholder="パスワード（確認）" required>
+        <form action="home.html" onsubmit="return registerUser()">
+            <input id="reg-id" type="text" placeholder="ユーザー名" required>
+            <input id="reg-pass" type="password" placeholder="パスワード" required>
+            <input id="reg-pass2" type="password" placeholder="パスワード（確認）" required>
             <button type="submit">アカウント作成</button>
         </form>
     </div>
+
 <script>
 // 新規登録処理
 function registerUser() {
@@ -123,5 +124,6 @@ function loginUser() {
     return true; // home.html に進む
 }
 </script>
+
 </body>
 </html>
