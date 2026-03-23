@@ -60,37 +60,59 @@
 </head>
 <body>
 
+<script>
+// ★ 自動ログイン（rememberUser があれば即ログイン）
+const remember = JSON.parse(localStorage.getItem("rememberUser") || "null");
+if (remember) {
+    localStorage.setItem("currentUser", remember.id);
+    location.href = "index.html";
+}
+</script>
+
 <h2>ScoutNet ログイン</h2>
 
+<!-- ログインフォーム -->
 <div class="box">
     <h3>ログイン</h3>
     <form onsubmit="return loginUser()">
-        <input id="login-id" type="text" placeholder="ユーザー名" required>
+        <input id="login-id" type="text" placeholder="ユーザーID" required>
+        <input id="login-pass" type="password" placeholder="パスコード" required>
         <button type="submit">ログイン</button>
     </form>
 </div>
 
+<!-- 新規登録フォーム -->
 <div class="box">
     <h3>新規アカウント作成</h3>
     <form onsubmit="return registerUser()">
-        <input id="reg-id" type="text" placeholder="ユーザー名" required>
+        <input id="reg-id" type="text" placeholder="ユーザーID" required>
+        <input id="reg-pass" type="password" placeholder="パスコード" required>
+        <input id="reg-pass2" type="password" placeholder="パスコード（確認）" required>
         <button type="submit">アカウント作成</button>
     </form>
 </div>
 
 <script>
+// 新規登録
 function registerUser() {
     const id = document.getElementById("reg-id").value.trim();
-    if (!id) return false;
+    const pass = document.getElementById("reg-pass").value.trim();
+    const pass2 = document.getElementById("reg-pass2").value.trim();
+
+    if (pass !== pass2) {
+        alert("パスコードが一致しません");
+        return false;
+    }
 
     let users = JSON.parse(localStorage.getItem("users") || "{}");
 
     if (users[id]) {
-        alert("このユーザー名は既に存在します");
+        alert("このユーザーIDは既に存在します");
         return false;
     }
 
     users[id] = {
+        pass: pass,
         icon: "",
         bio: "",
         following: [],
@@ -99,24 +121,40 @@ function registerUser() {
     };
 
     localStorage.setItem("users", JSON.stringify(users));
+
+    // ★ 自動ログイン用に保存
+    localStorage.setItem("rememberUser", JSON.stringify({ id, pass }));
+
+    // ★ 現在のログインユーザー
     localStorage.setItem("currentUser", id);
 
     location.href = "index.html";
     return false;
 }
 
+// ログイン
 function loginUser() {
     const id = document.getElementById("login-id").value.trim();
-    if (!id) return false;
+    const pass = document.getElementById("login-pass").value.trim();
 
     let users = JSON.parse(localStorage.getItem("users") || "{}");
 
     if (!users[id]) {
-        alert("このユーザーは存在しません");
+        alert("このユーザーIDは存在しません");
         return false;
     }
 
+    if (users[id].pass !== pass) {
+        alert("パスコードが違います");
+        return false;
+    }
+
+    // ★ 自動ログイン用に保存
+    localStorage.setItem("rememberUser", JSON.stringify({ id, pass }));
+
+    // ★ 現在のログインユーザー
     localStorage.setItem("currentUser", id);
+
     location.href = "index.html";
     return false;
 }
