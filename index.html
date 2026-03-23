@@ -3,129 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScoutNet - ログイン</title>
+    <title>ScoutNet - ホーム</title>
 
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
             margin: 0;
-            padding: 40px;
-            text-align: center;
+            padding: 0;
             color: #4E342E;
         }
 
-        .box {
-            background: white;
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 2px solid #D7C4A3;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav a {
+            color: #4E342E;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .card {
+            background: #FFFFFF;
             padding: 20px;
             border-radius: 16px;
             border: 2px solid #D7C4A3;
-            width: 80%;
-            max-width: 350px;
-            margin: 30px auto;
+            margin: 20px;
             box-shadow: 0 4px 0 #D7C4A3;
         }
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
+        .post {
+            background: white;
             border: 1px solid #D7C4A3;
-        }
-
-        button {
-            width: 95%;
+            border-radius: 16px;
             padding: 12px;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 3px 0 #1B5E20;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 0 #D7C4A3;
             cursor: pointer;
         }
 
-        h2 {
-            color: #2E7D32;
-            font-weight: 700;
+        .post img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
         }
 
-        h3 {
-            color: #2E7D32;
-            margin-bottom: 10px;
+        @media (max-width: 600px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            nav div:last-child {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
 
-<h2>ScoutNet ログイン</h2>
+<script>
+// ログインしてなければログインページへ
+if (!localStorage.getItem("currentUser")) {
+    location.href = "login.html";
+}
+</script>
 
-<!-- ログインフォーム -->
-<div class="box">
-    <h3>ログイン</h3>
-    <form onsubmit="return loginUser()">
-        <input id="login-id" type="text" placeholder="ユーザー名" required>
-        <button type="submit">ログイン</button>
-    </form>
-</div>
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
 
-<p><a href="about.html">ScoutNet について</a></p>
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+        <a href="index.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
 
-<!-- 新規登録フォーム -->
-<div class="box">
-    <h3>新規アカウント作成</h3>
-    <form onsubmit="return registerUser()">
-        <input id="reg-id" type="text" placeholder="ユーザー名" required>
-        <button type="submit">アカウント作成</button>
-    </form>
+<div class="card">
+    <h2>新着投稿</h2>
+    <div id="postList"></div>
 </div>
 
 <script>
-// 新規登録
-function registerUser() {
-    const id = document.getElementById("reg-id").value.trim();
-    if (!id) return false;
+const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+const postList = document.getElementById("postList");
 
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
+if (posts.length === 0) {
+    postList.innerHTML = "<p>まだ投稿がありません。</p>";
+} else {
+    posts.slice().reverse().forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post";
 
-    if (users[id]) {
-        alert("このユーザー名は既に存在します");
-        return false;
-    }
+        if (post.images?.length) {
+            const img = document.createElement("img");
+            img.src = post.images[0];
+            div.appendChild(img);
+        }
 
-    users[id] = {
-        icon: "",
-        bio: "",
-        following: [],
-        followers: [],
-        notifications: []
-    };
+        div.innerHTML += `<h3>${post.title}</h3><p>${post.description}</p>`;
 
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("currentUser", id);
+        div.addEventListener("click", () => {
+            location.href = "post.html?id=" + post.id;
+        });
 
-    alert("アカウント作成完了！");
-    location.href = "index.html";
-    return false;
-}
-
-// ログイン
-function loginUser() {
-    const id = document.getElementById("login-id").value.trim();
-    if (!id) return false;
-
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
-
-    if (!users[id]) {
-        alert("このユーザーは存在しません");
-        return false;
-    }
-
-    localStorage.setItem("currentUser", id);
-    location.href = "index.html";
-    return false;
+        postList.appendChild(div);
+    });
 }
 </script>
 

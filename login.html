@@ -2,114 +2,124 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScoutNet - ログイン</title>
 
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background:#f5f5f5;
-            margin:0;
-            padding:0;
-            color:#4E342E;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 40px;
+            text-align: center;
+            color: #4E342E;
         }
 
-        .container {
-            max-width:400px;
-            margin:60px auto;
-            background:white;
-            padding:30px;
-            border-radius:16px;
-            border:2px solid #D7C4A3;
-            box-shadow:0 4px 0 #D7C4A3;
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #D7C4A3;
+            width: 80%;
+            max-width: 350px;
+            margin: 30px auto;
+            box-shadow: 0 4px 0 #D7C4A3;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #D7C4A3;
+        }
+
+        button {
+            width: 95%;
+            padding: 12px;
+            background: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 3px 0 #1B5E20;
+            cursor: pointer;
         }
 
         h2 {
-            text-align:center;
-            color:#2E7D32;
-            margin-bottom:20px;
+            color: #2E7D32;
+            font-weight: 700;
         }
 
-        .input {
-            width:100%;
-            padding:12px;
-            border:1px solid #D7C4A3;
-            border-radius:10px;
-            margin-bottom:16px;
-        }
-
-        .btn {
-            width:100%;
-            padding:14px;
-            background:#2E7D32;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-weight:600;
-            cursor:pointer;
-            box-shadow:0 3px 0 #1B5E20;
-        }
-
-        a {
-            color:#2E7D32;
-            text-decoration:none;
-            font-weight:600;
-            display:block;
-            text-align:center;
-            margin-top:10px;
-        }
-
-        .terms {
-            font-size:13px;
-            text-align:center;
-            margin-top:10px;
-            color:#4E342E;
-        }
-
-        .terms a {
-            color:#2E7D32;
-            text-decoration:underline;
+        h3 {
+            color: #2E7D32;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🏕 ScoutNet</h2>
+<h2>ScoutNet ログイン</h2>
 
-    <input type="text" id="username" class="input" placeholder="ユーザー名">
+<div class="box">
+    <h3>ログイン</h3>
+    <form onsubmit="return loginUser()">
+        <input id="login-id" type="text" placeholder="ユーザー名" required>
+        <button type="submit">ログイン</button>
+    </form>
+</div>
 
-    <div class="terms">
-        ログインすることで、<br>
-        <a href="rules.html">利用規約</a> に同意したものとみなします。
-    </div>
-
-    <button class="btn" id="loginBtn">ログイン</button>
-
-    <a href="signup.html">新規登録はこちら</a>
+<div class="box">
+    <h3>新規アカウント作成</h3>
+    <form onsubmit="return registerUser()">
+        <input id="reg-id" type="text" placeholder="ユーザー名" required>
+        <button type="submit">アカウント作成</button>
+    </form>
 </div>
 
 <script>
-    document.getElementById("loginBtn").addEventListener("click", () => {
-        const name = document.getElementById("username").value.trim();
-        if (!name) return alert("ユーザー名を入力してください");
+function registerUser() {
+    const id = document.getElementById("reg-id").value.trim();
+    if (!id) return false;
 
-        localStorage.setItem("currentUser", name);
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
 
-        let users = JSON.parse(localStorage.getItem("users") || "{}");
-        if (!users[name]) {
-            users[name] = {
-                icon:"",
-                bio:"",
-                following:[],
-                followers:[],
-                notifications:[]
-            };
-        }
+    if (users[id]) {
+        alert("このユーザー名は既に存在します");
+        return false;
+    }
 
-        localStorage.setItem("users", JSON.stringify(users));
+    users[id] = {
+        icon: "",
+        bio: "",
+        following: [],
+        followers: [],
+        notifications: []
+    };
 
-        window.location.href = "index.html";
-    });
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUser", id);
+
+    location.href = "index.html";
+    return false;
+}
+
+function loginUser() {
+    const id = document.getElementById("login-id").value.trim();
+    if (!id) return false;
+
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+    if (!users[id]) {
+        alert("このユーザーは存在しません");
+        return false;
+    }
+
+    localStorage.setItem("currentUser", id);
+    location.href = "index.html";
+    return false;
+}
 </script>
 
 </body>
