@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>ScoutNet - 通知</title>
 
+    <!-- ★ スマホ対応に必須 ★ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -58,6 +61,36 @@
             border-radius:12px;
             border:1px solid #C5E1A5;
             margin-bottom:10px;
+        }
+
+        /* ★ スマホ用レイアウト ★ */
+        @media (max-width: 600px) {
+
+            /* ナビバーのリンクを縦並びに */
+            nav div:nth-child(2) {
+                display:flex;
+                flex-direction:column;
+                gap:10px;
+                font-size:14px;
+            }
+
+            nav {
+                flex-direction:column;
+                align-items:flex-start;
+                padding:10px;
+            }
+
+            /* カードの余白調整 */
+            .card {
+                margin: 12px;
+                padding: 16px;
+            }
+
+            /* 通知の文字サイズ調整 */
+            .notification {
+                font-size:14px;
+                padding:10px;
+            }
         }
     </style>
 </head>
