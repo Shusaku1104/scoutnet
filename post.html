@@ -2,93 +2,287 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet - 投稿する</title>
-
-    <!-- ★ スマホ対応に必須 ★ -->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoutNet - 投稿詳細</title>
 
     <style>
         body {
-            font-family: sans-serif;
-            padding: 20px;
-            margin: 0;
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #4E342E;
         }
 
-        h2 {
-            margin-bottom: 20px;
+        .post-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #D7C4A3;
+            box-shadow: 0 4px 0 #D7C4A3;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .meta {
+            font-size: 14px;
+            color: #6d6d6d;
+            margin-bottom: 10px;
+        }
+
+        .likeBtn {
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .comment-box {
+            margin-top: 25px;
+        }
+
+        .comment {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #D7C4A3;
+            margin-bottom: 10px;
+        }
+
+        .comment-user {
+            font-weight: bold;
             color: #2E7D32;
         }
 
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        button {
+        #deleteBtn {
+            margin-top: 20px;
             width: 100%;
             padding: 12px;
-            background: #2E7D32;
+            background: #B71C1C;
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 18px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 3px 0 #7F0000;
             cursor: pointer;
-        }
-
-        button:hover {
-            background: #1B5E20;
-        }
-
-        /* ★ スマホ用調整（念のため）★ */
-        @media (max-width: 600px) {
-            body {
-                padding: 15px;
-            }
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<h2>新規投稿</h2>
+<div class="post-card">
+    <h2 id="title">読み込み中...</h2>
+    <div class="meta" id="meta"></div>
+    <img id="image" style="display:none;">
+    <p id="description"></p>
 
-<input id="title" placeholder="タイトル">
-<textarea id="description" placeholder="内容"></textarea>
+    <span id="likeBtn" class="likeBtn">❤️ 0</span>
 
-<select id="category">
-    <option value="indoor">Indoor</option>
-    <option value="outdoor">Outdoor</option>
-</select>
+    <!-- コメント -->
+    <div class="comment-box">
+        <h3>コメント</h3>
+        <div id="commentList"></div>
 
-<button id="submitBtn">投稿する</button>
+        <textarea id="commentInput" rows="3" style="width:100%; margin-top:10px;" placeholder="コメントを書く…"></textarea>
+        <button id="commentBtn" style="margin-top:10px; width:100%; padding:10px; background:#2E7D32; color:white; border:none; border-radius:8px; font-size:16px;">
+            コメントする
+        </button>
+    </div>
+
+    <!-- 🔥 削除ボタン（自分の投稿だけ表示） -->
+    <button id="deleteBtn">🗑 この投稿を削除する</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
 
 <script>
-    document.getElementById("submitBtn").addEventListener("click", () => {
-        const title = document.getElementById("title").value;
-        const description = document.getElementById("description").value;
-        const category = document.getElementById("category").value;
+const firebaseConfig = {
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    authDomain: "scoutnet-3ccb1.firebaseapp.com",
+    projectId: "scoutnet-3ccb1",
+    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    messagingSenderId: "619869604171",
+    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+};
 
-        const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-        const newPost = {
-            id: Date.now(),
-            title,
-            description,
-            category,
-            likesUsers: [],
-            comments: []
-        };
+const params = new URLSearchParams(location.search);
+const postId = params.get("id");
 
-        posts.push(newPost);
-        localStorage.setItem("posts", JSON.stringify(posts));
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
-        alert("投稿しました！");
-        location.href = "index.html";
+let postOwnerId = null;
+let postImages = [];
+
+/* -------------------------
+   通知送信
+------------------------- */
+async function sendNotification(toUserId, type, postId) {
+    await db.collection("notifications").add({
+        userId: toUserId,
+        type: type,
+        postId: postId,
+        fromUserId: currentUser.id,
+        fromUserName: currentUser.name,
+        createdAt: new Date()
     });
+}
+
+/* -------------------------
+   いいね
+------------------------- */
+async function toggleLike() {
+    const ref = db.collection("posts").doc(postId);
+    const snap = await ref.get();
+    const post = snap.data();
+
+    let likes = post.likes || [];
+
+    if (likes.includes(currentUser.id)) {
+        likes = likes.filter(id => id !== currentUser.id);
+    } else {
+        likes.push(currentUser.id);
+        if (postOwnerId !== currentUser.id) {
+            sendNotification(postOwnerId, "like", postId);
+        }
+    }
+
+    await ref.update({ likes });
+}
+
+/* -------------------------
+   コメント送信
+------------------------- */
+async function sendComment() {
+    const text = document.getElementById("commentInput").value.trim();
+    if (!text) return;
+
+    await db.collection("posts").doc(postId).collection("comments").add({
+        userId: currentUser.id,
+        userName: currentUser.name,
+        text: text,
+        createdAt: new Date()
+    });
+
+    if (postOwnerId !== currentUser.id) {
+        sendNotification(postOwnerId, "comment", postId);
+    }
+
+    document.getElementById("commentInput").value = "";
+}
+
+/* -------------------------
+   コメント読み込み
+------------------------- */
+function loadComments() {
+    db.collection("posts").doc(postId)
+      .collection("comments")
+      .orderBy("createdAt", "asc")
+      .onSnapshot(snapshot => {
+          const list = document.getElementById("commentList");
+          list.innerHTML = "";
+
+          snapshot.forEach(doc => {
+              const c = doc.data();
+              const div = document.createElement("div");
+              div.className = "comment";
+              div.innerHTML = `
+                  <div class="comment-user">${c.userName}</div>
+                  <div>${c.text}</div>
+              `;
+              list.appendChild(div);
+          });
+      });
+}
+
+/* -------------------------
+   🔥 投稿削除
+------------------------- */
+async function deletePost() {
+    if (!confirm("本当に削除しますか？")) return;
+
+    const ref = db.collection("posts").doc(postId);
+
+    // 画像削除
+    for (let url of postImages) {
+        try {
+            const imgRef = storage.refFromURL(url);
+            await imgRef.delete();
+        } catch (e) {
+            console.log("画像削除失敗:", e);
+        }
+    }
+
+    // コメント削除
+    const comments = await ref.collection("comments").get();
+    const batch = db.batch();
+    comments.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    // 投稿削除
+    await ref.delete();
+
+    alert("投稿を削除しました");
+    location.href = "index.html";
+}
+
+/* -------------------------
+   投稿読み込み
+------------------------- */
+db.collection("posts").doc(postId).onSnapshot(doc => {
+    if (!doc.exists) {
+        document.getElementById("title").innerText = "投稿が見つかりません";
+        return;
+    }
+
+    const post = doc.data();
+    postOwnerId = post.userId;
+    postImages = post.images || [];
+
+    document.getElementById("title").innerText = post.title;
+    document.getElementById("description").innerText = post.description;
+
+    const date = post.createdAt?.toDate ? post.createdAt.toDate() : new Date();
+    document.getElementById("meta").innerText =
+        `${post.userName} さん・${date.toLocaleString()}`;
+
+    if (post.images && post.images.length > 0) {
+        const img = document.getElementById("image");
+        img.src = post.images[0];
+        img.style.display = "block";
+    }
+
+    const likes = post.likes || [];
+    document.getElementById("likeBtn").innerText = `❤️ ${likes.length}`;
+
+    // 🔥 自分の投稿なら削除ボタン表示
+    if (postOwnerId === currentUser.id) {
+        document.getElementById("deleteBtn").style.display = "block";
+    }
+});
+
+/* -------------------------
+   イベント
+------------------------- */
+document.getElementById("likeBtn").addEventListener("click", toggleLike);
+document.getElementById("commentBtn").addEventListener("click", sendComment);
+document.getElementById("deleteBtn").addEventListener("click", deletePost);
+
+loadComments();
 </script>
 
 </body>

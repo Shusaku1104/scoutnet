@@ -57,16 +57,11 @@
             margin-bottom: 10px;
         }
 
-        @media (max-width: 600px) {
-            nav {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            nav div:last-child {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
+        .likeBtn {
+            font-size: 18px;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -97,32 +92,120 @@ if (!localStorage.getItem("currentUser")) {
     <div id="postList"></div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
 <script>
-const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+const firebaseConfig = {
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    authDomain: "scoutnet-3ccb1.firebaseapp.com",
+    projectId: "scoutnet-3ccb1",
+    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    messagingSenderId: "619869604171",
+    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+};
+
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const postList = document.getElementById("postList");
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
-if (posts.length === 0) {
-    postList.innerHTML = "<p>まだ投稿がありません。</p>";
-} else {
-    posts.slice().reverse().forEach(post => {
-        const div = document.createElement("div");
-        div.className = "post";
-
-        if (post.images?.length) {
-            const img = document.createElement("img");
-            img.src = post.images[0];
-            div.appendChild(img);
-        }
-
-        div.innerHTML += `<h3>${post.title}</h3><p>${post.description}</p>`;
-
-        div.addEventListener("click", () => {
-            location.href = "post.html?id=" + post.id;
-        });
-
-        postList.appendChild(div);
+/* -------------------------
+   通知送信関数
+------------------------- */
+async function sendNotification(toUserId, type, postId) {
+    await db.collection("notifications").add({
+        userId: toUserId,
+        type: type,
+        postId: postId,
+        fromUserId: currentUser.id,
+        fromUserName: currentUser.name,
+        createdAt: new Date()
     });
 }
+
+/* -------------------------
+   いいね処理
+------------------------- */
+async function toggleLike(postId, postOwnerId) {
+    const ref = db.collection("posts").doc(postId);
+    const snap = await ref.get();
+    const post = snap.data();
+
+    let likes = post.likes || [];
+
+    if (likes.includes(currentUser.id)) {
+        // いいね解除
+        likes = likes.filter(id => id !== currentUser.id);
+    } else {
+        // いいね追加
+        likes.push(currentUser.id);
+
+        // 通知（自分の投稿じゃないときだけ）
+        if (postOwnerId !== currentUser.id) {
+            sendNotification(postOwnerId, "like", postId);
+        }
+    }
+
+    await ref.update({ likes });
+}
+
+/* -------------------------
+   Firestore から投稿を読み込む
+------------------------- */
+db.collection("posts")
+  .orderBy("createdAt", "desc")
+  .onSnapshot((snapshot) => {
+      postList.innerHTML = "";
+
+      if (snapshot.empty) {
+          postList.innerHTML = "<p>まだ投稿がありません。</p>";
+          return;
+      }
+
+      snapshot.forEach((doc) => {
+          const post = doc.data();
+
+          const div = document.createElement("div");
+          div.className = "post";
+
+          // 画像
+          if (post.images && post.images.length > 0) {
+              const img = document.createElement("img");
+              img.src = post.images[0];
+              div.appendChild(img);
+          }
+
+          // タイトル・説明
+          div.innerHTML += `
+              <h3>${post.title}</h3>
+              <p>${post.description}</p>
+          `;
+
+          // いいねボタン
+          const likeBtn = document.createElement("span");
+          likeBtn.className = "likeBtn";
+
+          const likes = post.likes || [];
+          likeBtn.innerHTML = `❤️ ${likes.length}`;
+
+          likeBtn.addEventListener("click", (e) => {
+              e.stopPropagation(); // 投稿クリックを防ぐ
+              toggleLike(doc.id, post.userId);
+          });
+
+          div.appendChild(likeBtn);
+
+          // 投稿クリックで詳細へ
+          div.addEventListener("click", () => {
+              location.href = "post.html?id=" + doc.id;
+          });
+
+          postList.appendChild(div);
+      });
+  });
 </script>
 
 </body>

@@ -27,10 +27,14 @@
             text-align: left;
         }
 
-        h2 {
-            color: #2E7D32;
-            font-weight: 700;
-            text-align: center;
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #ddd;
+            display: block;
+            margin: 0 auto 10px;
         }
 
         input, textarea {
@@ -53,80 +57,180 @@
             box-shadow: 0 3px 0 #1B5E20;
             cursor: pointer;
         }
-
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: #ddd;
-            display: block;
-            margin: 0 auto 10px;
-        }
     </style>
 </head>
 <body>
 
-    <h2>ScoutNet プロフィール</h2>
+<h2>ScoutNet プロフィール</h2>
 
-    <div class="box">
-        <h3>ユーザー情報</h3>
+<div class="box">
+    <h3>ユーザー情報</h3>
 
-        <!-- プロフィール画像 -->
-        <img id="profile-img" class="profile-img" src="" alt="プロフィール画像">
-        <input type="file" id="img-input" accept="image/*">
+    <img id="profile-img" class="profile-img" src="" alt="プロフィール画像">
+    <input type="file" id="img-input" accept="image/*">
 
-        <!-- 名前 -->
-        <label>名前</label>
-        <input type="text" id="name-input" placeholder="名前を入力">
+    <label>名前</label>
+    <input type="text" id="name-input">
 
-        <!-- 自己紹介 -->
-        <label>自己紹介</label>
-        <textarea id="bio-input" rows="4" placeholder="自己紹介を入力"></textarea>
+    <label>自己紹介</label>
+    <textarea id="bio-input" rows="4"></textarea>
 
-        <button onclick="saveProfile()">保存する</button>
-    </div>
+    <button id="saveBtn" onclick="saveProfile()">保存する</button>
+
+    <!-- フォローボタン（他人のプロフィール時のみ表示） -->
+    <button id="followBtn" style="display:none; margin-top:10px;">
+        フォローする
+    </button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
 
 <script>
-// 画像選択 → プレビュー表示 & 保存
-document.getElementById("img-input").addEventListener("change", function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+const firebaseConfig = {
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    authDomain: "scoutnet-3ccb1.firebaseapp.com",
+    projectId: "scoutnet-3ccb1",
+    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    messagingSenderId: "619869604171",
+    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+};
+
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+// URL の ?id=xxx でプロフィール対象を決定
+const params = new URLSearchParams(location.search);
+const viewUserId = params.get("id") || currentUser.id;
+
+const isMyProfile = (viewUserId === currentUser.id);
+
+const viewUserRef = db.collection("users").doc(viewUserId);
+const myRef = db.collection("users").doc(currentUser.id);
+
+let selectedImageFile = null;
+
+/* -------------------------
+   通知送信
+------------------------- */
+async function sendNotification(toUserId, type, postId) {
+    await db.collection("notifications").add({
+        userId: toUserId,
+        type: type,
+        postId: postId,
+        fromUserId: currentUser.id,
+        fromUserName: currentUser.name,
+        createdAt: new Date()
+    });
+}
+
+/* -------------------------
+   画像選択 → プレビュー
+------------------------- */
+document.getElementById("img-input").addEventListener("change", (e) => {
+    selectedImageFile = e.target.files[0];
+    if (!selectedImageFile) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const imgData = e.target.result;
-
-        // プレビュー表示
-        document.getElementById("profile-img").src = imgData;
-
-        // 保存
-        localStorage.setItem("profileImage", imgData);
+    reader.onload = () => {
+        document.getElementById("profile-img").src = reader.result;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(selectedImageFile);
 });
 
-// 保存ボタン → 名前・自己紹介を保存
-function saveProfile() {
+/* -------------------------
+   Firestore にプロフィール保存
+------------------------- */
+async function saveProfile() {
     const name = document.getElementById("name-input").value;
     const bio = document.getElementById("bio-input").value;
 
-    localStorage.setItem("profileName", name);
-    localStorage.setItem("profileBio", bio);
+    let iconUrl = null;
+
+    if (selectedImageFile) {
+        const ref = storage.ref("icons/" + currentUser.id + ".jpg");
+        await ref.put(selectedImageFile);
+        iconUrl = await ref.getDownloadURL();
+    }
+
+    await myRef.set({
+        name,
+        bio,
+        iconUrl: iconUrl || document.getElementById("profile-img").src
+    }, { merge: true });
 
     alert("プロフィールを保存しました！");
 }
 
-// ページ読み込み時に保存された情報を表示
-window.onload = function() {
-    const savedImg = localStorage.getItem("profileImage");
-    const savedName = localStorage.getItem("profileName");
-    const savedBio = localStorage.getItem("profileBio");
+/* -------------------------
+   プロフィール読み込み
+------------------------- */
+viewUserRef.get().then(doc => {
+    if (doc.exists) {
+        const data = doc.data();
+        document.getElementById("profile-img").src = data.iconUrl || "";
+        document.getElementById("name-input").value = data.name || "";
+        document.getElementById("bio-input").value = data.bio || "";
+    }
+});
 
-    if (savedImg) document.getElementById("profile-img").src = savedImg;
-    if (savedName) document.getElementById("name-input").value = savedName;
-    if (savedBio) document.getElementById("bio-input").value = savedBio;
-};
+/* -------------------------
+   自分のプロフィールか判定
+------------------------- */
+if (!isMyProfile) {
+    // 他人のプロフィール → 編集不可
+    document.getElementById("saveBtn").style.display = "none";
+    document.getElementById("img-input").style.display = "none";
+    document.getElementById("name-input").disabled = true;
+    document.getElementById("bio-input").disabled = true;
+
+    // フォローボタン表示
+    const followBtn = document.getElementById("followBtn");
+    followBtn.style.display = "block";
+
+    // フォロー状態チェック
+    viewUserRef.onSnapshot(async doc => {
+        const data = doc.data();
+        const followers = data.followers || [];
+
+        if (followers.includes(currentUser.id)) {
+            followBtn.textContent = "フォロー解除";
+        } else {
+            followBtn.textContent = "フォローする";
+        }
+    });
+
+    // フォロー / 解除
+    followBtn.addEventListener("click", async () => {
+        const userDoc = await viewUserRef.get();
+        const userData = userDoc.data();
+        let followers = userData.followers || [];
+
+        const myDoc = await myRef.get();
+        let following = myDoc.data().following || [];
+
+        if (followers.includes(currentUser.id)) {
+            // フォロー解除
+            followers = followers.filter(id => id !== currentUser.id);
+            following = following.filter(id => id !== viewUserId);
+        } else {
+            // フォロー
+            followers.push(currentUser.id);
+            following.push(viewUserId);
+
+            // 通知
+            sendNotification(viewUserId, "follow", null);
+        }
+
+        await viewUserRef.update({ followers });
+        await myRef.update({ following });
+    });
+}
 </script>
 
 </body>

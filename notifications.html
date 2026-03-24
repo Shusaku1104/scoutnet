@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>ScoutNet - 通知</title>
-
-    <!-- ★ スマホ対応に必須 ★ -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
@@ -34,10 +32,6 @@
             font-weight:600;
         }
 
-        nav a:hover {
-            color:#2E7D32;
-        }
-
         .card {
             background: #FFFFFF;
             padding: 20px;
@@ -62,36 +56,6 @@
             border:1px solid #C5E1A5;
             margin-bottom:10px;
         }
-
-        /* ★ スマホ用レイアウト ★ */
-        @media (max-width: 600px) {
-
-            /* ナビバーのリンクを縦並びに */
-            nav div:nth-child(2) {
-                display:flex;
-                flex-direction:column;
-                gap:10px;
-                font-size:14px;
-            }
-
-            nav {
-                flex-direction:column;
-                align-items:flex-start;
-                padding:10px;
-            }
-
-            /* カードの余白調整 */
-            .card {
-                margin: 12px;
-                padding: 16px;
-            }
-
-            /* 通知の文字サイズ調整 */
-            .notification {
-                font-size:14px;
-                padding:10px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -103,7 +67,7 @@
 
     <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
         <a href="index.html">ホーム</a>
-        <a href="post.html">投稿する</a>
+        <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
@@ -114,31 +78,52 @@
     <div id="notificationList"></div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
 <script>
-    const currentUser = localStorage.getItem("currentUser");
-    const users = JSON.parse(localStorage.getItem("users") || "{}");
+const firebaseConfig = {
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    authDomain: "scoutnet-3ccb1.firebaseapp.com",
+    projectId: "scoutnet-3ccb1",
+    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    messagingSenderId: "619869604171",
+    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+};
 
-    const list = document.getElementById("notificationList");
-    const notes = users[currentUser]?.notifications || [];
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    if (notes.length === 0) {
-        list.innerHTML = "<p>通知はありません。</p>";
-    } else {
-        notes.slice().reverse().forEach(n => {
-            const div = document.createElement("div");
-            div.className = "notification";
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+const list = document.getElementById("notificationList");
 
-            if (n.type === "follow") {
-                div.textContent = `➕ ${n.from} さんにフォローされました`;
-            } else if (n.type === "like") {
-                div.textContent = `❤️ ${n.from} さんがあなたの投稿にいいねしました`;
-            } else if (n.type === "comment") {
-                div.textContent = `💬 ${n.from} さんがあなたの投稿にコメントしました`;
-            }
+// Firestore から通知を読み込む
+db.collection("notifications")
+  .where("userId", "==", currentUser.id)
+  .orderBy("createdAt", "desc")
+  .onSnapshot(snapshot => {
+      list.innerHTML = "";
 
-            list.appendChild(div);
-        });
-    }
+      if (snapshot.empty) {
+          list.innerHTML = "<p>通知はありません。</p>";
+          return;
+      }
+
+      snapshot.forEach(doc => {
+          const n = doc.data();
+          const div = document.createElement("div");
+          div.className = "notification";
+
+          if (n.type === "like") {
+              div.textContent = `❤️ ${n.fromUserName} さんがあなたの投稿にいいねしました`;
+          } else if (n.type === "comment") {
+              div.textContent = `💬 ${n.fromUserName} さんがあなたの投稿にコメントしました`;
+          }
+
+          list.appendChild(div);
+      });
+  });
 </script>
 
 </body>

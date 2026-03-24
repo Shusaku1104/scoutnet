@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>新規投稿</title>
-
-    <!-- ★ スマホ対応に必須 ★ -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
@@ -20,7 +18,6 @@
             margin-bottom: 20px;
         }
 
-        /* 入力欄 */
         .input, .textarea {
             width: 100%;
             padding: 10px;
@@ -31,14 +28,12 @@
             outline: none;
         }
 
-        /* 画像プレビュー */
         #preview img {
             width: 100%;
             border-radius: 10px;
             margin-bottom: 10px;
         }
 
-        /* 投稿ボタン */
         .submit-btn {
             width: 100%;
             padding: 12px;
@@ -53,51 +48,10 @@
         .submit-btn:hover {
             background: #1976D2;
         }
-
-        .genre {
-            margin-bottom: 20px;
-        }
-
-        /* ★ スマホ用レイアウト ★ */
-        @media (max-width: 600px) {
-
-            /* ナビバーのリンクを縦並びに */
-            nav div:nth-child(2) {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                font-size: 14px;
-            }
-
-            /* ナビバー全体のレイアウト調整 */
-            nav {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 10px;
-            }
-
-            /* 本文の余白調整 */
-            body {
-                padding: 10px;
-                max-width: 100%;
-            }
-
-            /* 入力欄の文字サイズ調整 */
-            .input, .textarea {
-                font-size: 14px;
-            }
-
-            /* 投稿ボタンの調整 */
-            .submit-btn {
-                font-size: 16px;
-                padding: 10px;
-            }
-        }
     </style>
 </head>
 <body>
 
-<!-- ScoutNet ナビバー -->
 <nav style="
     display:flex;
     justify-content:space-between;
@@ -115,7 +69,7 @@
 
     <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
         <a href="index.html" style="color:#4E342E; text-decoration:none;">ホーム</a>
-        <a href="post.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
+        <a href="newpost.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
         <a href="profile.html" style="color:#4E342E; text-decoration:none;">プロフィール</a>
         <a href="notifications.html" style="color:#4E342E; text-decoration:none;">🔔 通知</a>
     </div>
@@ -125,99 +79,99 @@
 
 <form id="postForm">
 
-    <!-- ① 画像選択 -->
     <input id="images" type="file" accept="image/*" multiple>
-
-    <!-- ② プレビュー -->
     <div id="preview"></div>
 
-    <!-- ③ タイトル -->
     <input type="text" id="title" class="input" placeholder="タイトル">
-
-    <!-- ④ 説明 -->
     <input type="text" id="description" class="input" placeholder="説明">
-
-    <!-- ⑤ 本文 -->
     <textarea id="content" class="textarea" rows="5" placeholder="本文を書く…"></textarea>
 
-    <!-- ⑥ ジャンル -->
     <div class="genre">
         <label><input type="radio" name="genre" value="indoor"> インドア</label>
         <label><input type="radio" name="genre" value="outdoor"> アウトドア</label>
     </div>
 
-    <!-- ⑦ 投稿ボタン -->
     <button type="submit" class="submit-btn">投稿する</button>
 
 </form>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
+
 <script>
-    // 画像プレビュー
-    const input = document.getElementById('images');
-    const preview = document.getElementById('preview');
+const firebaseConfig = {
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    authDomain: "scoutnet-3ccb1.firebaseapp.com",
+    projectId: "scoutnet-3ccb1",
+    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    messagingSenderId: "619869604171",
+    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+};
 
-    input.addEventListener('change', () => {
-        preview.innerHTML = "";
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-        Array.from(input.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const img = document.createElement('img');
-                img.src = reader.result;
-                preview.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        });
+// プレビュー
+document.getElementById("images").addEventListener("change", () => {
+    const preview = document.getElementById("preview");
+    preview.innerHTML = "";
+
+    Array.from(images.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = document.createElement("img");
+            img.src = reader.result;
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+// 投稿処理
+document.getElementById("postForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById("title").value;
+    const description = document.getElementById("description").value;
+    const content = document.getElementById("content").value;
+    const genre = document.querySelector("input[name='genre']:checked")?.value;
+
+    if (!genre) {
+        alert("ジャンルを選んでください");
+        return;
+    }
+
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    const files = document.getElementById("images").files;
+
+    const imageUrls = [];
+
+    // 画像アップロード
+    for (let file of files) {
+        const ref = storage.ref("posts/" + Date.now() + "_" + file.name);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        imageUrls.push(url);
+    }
+
+    // Firestore に保存
+    await db.collection("posts").add({
+        title,
+        description,
+        content,
+        genre,
+        images: imageUrls,
+        userId: user.id,
+        userName: user.name,
+        createdAt: new Date()
     });
 
-    document.getElementById("postForm").addEventListener("submit", function(e) {
-        e.preventDefault();
-
-        const title = document.getElementById("title").value;
-        const description = document.getElementById("description").value;
-        const content = document.getElementById("content").value;
-        const genre = document.querySelector("input[name='genre']:checked")?.value;
-
-        if (!genre) {
-            alert("ジャンルを選んでください");
-            return;
-        }
-
-        // 画像を Base64 に変換
-        const files = document.getElementById("images").files;
-        const images = [];
-
-        const readerPromises = Array.from(files).map(file => {
-            return new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.readAsDataURL(file);
-            });
-        });
-
-        Promise.all(readerPromises).then(results => {
-            results.forEach(img => images.push(img));
-
-            // 投稿データ
-            const post = {
-                id: Date.now(),
-                title,
-                description,
-                content,
-                genre,
-                images,
-                author: localStorage.getItem("currentUser")
-            };
-
-            // 保存
-            const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-            posts.push(post);
-            localStorage.setItem("posts", JSON.stringify(posts));
-
-            alert("投稿を保存しました！");
-            window.location.href = genre + ".html";
-        });
-    });
+    alert("投稿しました！");
+    location.href = "index.html";
+});
 </script>
 
 </body>
