@@ -2,41 +2,44 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScoutNet - ホーム</title>
 
-    <style>
-        html {
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
+    <!-- ★ スマホ対応に必須 ★ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
-            margin: 0;
             padding: 0;
+            margin: 0;
             color: #4E342E;
         }
 
+        /* ナビバー */
         nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            background: #ffffff;
-            border-bottom: 2px solid #D7C4A3;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:#ffffff;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
         }
 
         nav a {
-            color: #4E342E;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
         }
 
+        nav a:hover {
+            color:#2E7D32;
+        }
+
+        /* カード */
         .card {
             background: #FFFFFF;
             padding: 20px;
@@ -46,6 +49,15 @@
             box-shadow: 0 4px 0 #D7C4A3;
         }
 
+        h2 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2E7D32;
+            border-left: 6px solid #66BB6A;
+            padding-left: 10px;
+        }
+
+        /* 投稿カード */
         .post {
             background: white;
             border: 1px solid #D7C4A3;
@@ -62,175 +74,128 @@
             margin-bottom: 10px;
         }
 
-        .likeBtn {
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: inline-block;
-            margin-top: 8px;
+        /* カテゴリボタン */
+        .category-buttons {
+            display:flex;
+            gap:10px;
+            margin-bottom:20px;
         }
 
-        @media (max-width: 480px) {
-            nav div:first-child {
-                font-size: 1.2rem;
+        .category-buttons a {
+            flex:1;
+            text-align:center;
+            padding:12px;
+            background:#2E7D32;
+            color:white;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:600;
+            box-shadow:0 3px 0 #1B5E20;
+        }
+
+        .category-buttons a:hover {
+            background:#388E3C;
+        }
+
+        /* ★ スマホ用レイアウト ★ */
+        @media (max-width: 600px) {
+
+            /* ナビバーのリンクを縦並びに */
+            nav div:nth-child(2) {
+                display:flex;
+                flex-direction:column;
+                gap:10px;
+                font-size:14px;
             }
 
-            nav a {
-                font-size: 0.8rem;
+            nav {
+                flex-direction:column;
+                align-items:flex-start;
+                padding:10px;
             }
 
+            /* カードの余白調整 */
             .card {
                 margin: 12px;
                 padding: 16px;
             }
 
+            /* カテゴリボタンを縦並びに */
+            .category-buttons {
+                flex-direction:column;
+            }
+
+            .category-buttons a {
+                padding:10px;
+                font-size:14px;
+            }
+
+            /* 投稿カードの余白調整 */
             .post {
-                padding: 10px;
+                padding:10px;
             }
         }
     </style>
 </head>
 <body>
 
+<!-- ScoutNet ナビバー -->
 <nav>
-    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-weight:600;">
+    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
         <a href="index.html">ホーム</a>
-        <a href="newpost.html">投稿する</a>
+        <a href="post.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
+<!-- カテゴリ -->
 <div class="card">
-    <h2 style="font-size:1.4rem;">新着投稿</h2>
+    <h2>カテゴリ</h2>
+
+    <div class="category-buttons">
+        <a href="indoor.html">🏠 Indoor</a>
+        <a href="outdoor.html">⛺ Outdoor</a>
+    </div>
+</div>
+
+<!-- 投稿一覧 -->
+<div class="card">
+    <h2>新着投稿</h2>
     <div id="postList"></div>
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-
 <script>
-// 🔥 本物の Firebase 設定をここに入れる
-const firebaseConfig = {
-    apiKey: "YOUR_REAL_API_KEY",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
-};
+    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
+    const postList = document.getElementById("postList");
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-let currentUser = null;
-
-// 🔥 ログインチェック
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-    currentUser = user;
-});
-
-const postList = document.getElementById("postList");
-
-/* -------------------------
-   通知送信
-------------------------- */
-async function sendNotification(toUserId, type, postId) {
-    await db.collection("notifications").add({
-        userId: toUserId,
-        type: type,
-        postId: postId,
-        fromUserId: currentUser.uid,
-        fromUserName: currentUser.email,
-        createdAt: new Date()
-    });
-}
-
-/* -------------------------
-   いいね処理
-------------------------- */
-async function toggleLike(postId, postOwnerId) {
-    const ref = db.collection("posts").doc(postId);
-    const snap = await ref.get();
-    const post = snap.data();
-
-    let likes = post.likes || [];
-
-    if (likes.includes(currentUser.uid)) {
-        likes = likes.filter(id => id !== currentUser.uid);
+    if (posts.length === 0) {
+        postList.innerHTML = "<p>まだ投稿がありません。</p>";
     } else {
-        likes.push(currentUser.uid);
+        posts.slice().reverse().forEach(post => {
+            const div = document.createElement("div");
+            div.className = "post";
 
-        if (postOwnerId !== currentUser.uid) {
-            sendNotification(postOwnerId, "like", postId);
-        }
+            if (post.images?.length) {
+                const img = document.createElement("img");
+                img.src = post.images[0];
+                div.appendChild(img);
+            }
+
+            div.innerHTML += `<h3>${post.title}</h3><p>${post.description}</p>`;
+
+            div.addEventListener("click", () => {
+                window.location.href = "post.html?id=" + post.id;
+            });
+
+            postList.appendChild(div);
+        });
     }
-
-    await ref.update({ likes });
-}
-
-/* -------------------------
-   投稿読み込み
-------------------------- */
-db.collection("posts")
-  .orderBy("createdAt", "desc")
-  .onSnapshot((snapshot) => {
-      postList.innerHTML = "";
-
-      if (snapshot.empty) {
-          postList.innerHTML = "<p>まだ投稿がありません。</p>";
-          return;
-      }
-
-      snapshot.forEach((doc) => {
-          const post = doc.data();
-
-          const div = document.createElement("div");
-          div.className = "post";
-
-          if (post.images && post.images.length > 0) {
-              const img = document.createElement("img");
-              img.src = post.images[0];
-              div.appendChild(img);
-          }
-
-          div.innerHTML += `
-              <h3 style="font-size:1.2rem;">${post.title}</h3>
-              <p>${post.description}</p>
-          `;
-
-          const likeBtn = document.createElement("span");
-          likeBtn.className = "likeBtn";
-
-          const likes = post.likes || [];
-          likeBtn.innerHTML = `❤️ ${likes.length}`;
-
-          likeBtn.addEventListener("click", (e) => {
-              e.stopPropagation();
-              toggleLike(doc.id, post.userId);
-          });
-
-          div.appendChild(likeBtn);
-
-          div.addEventListener("click", () => {
-              location.href = "post.html?id=" + doc.id;
-          });
-
-          postList.appendChild(div);
-      });
-  });
 </script>
 
 </body>
 </html>
-<!-- update -->
