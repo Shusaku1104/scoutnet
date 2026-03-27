@@ -2,76 +2,114 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>新規投稿</title>
+    <title>ScoutNet - 新規投稿</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
+        /* 端末幅に応じてフォント自動調整 */
+        html {
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
         body {
-            font-family: sans-serif;
-            background: #fff;
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background: #f5f5f5;
             padding: 20px;
-            max-width: 600px;
+            margin: 0;
+            color: #4E342E;
+            max-width: 700px;
             margin: auto;
         }
 
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:#ffffff;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            font-size: 0.9rem;
+        }
+
         h2 {
-            margin-bottom: 20px;
+            margin: 20px 0;
+            font-size: 1.4rem;
+            color: #2E7D32;
         }
 
         .input, .textarea {
             width: 100%;
-            padding: 10px;
-            border: none;
-            border-bottom: 1px solid #ccc;
+            padding: 12px;
+            border: 1px solid #D7C4A3;
+            border-radius: 10px;
             margin-bottom: 20px;
-            font-size: 16px;
-            outline: none;
+            font-size: 1rem;
+            background: #fff;
         }
 
         #preview img {
             width: 100%;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 10px;
         }
 
         .submit-btn {
             width: 100%;
-            padding: 12px;
-            background: #2196F3;
+            padding: 14px;
+            background: #2E7D32;
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 18px;
+            border-radius: 10px;
+            font-size: 1.1rem;
             cursor: pointer;
+            box-shadow: 0 3px 0 #1B5E20;
         }
 
         .submit-btn:hover {
-            background: #1976D2;
+            background: #1B5E20;
+        }
+
+        /* スマホ向け最適化 */
+        @media (max-width: 480px) {
+            nav div:first-child {
+                font-size: 1.2rem;
+            }
+
+            nav a {
+                font-size: 0.8rem;
+            }
+
+            .input, .textarea {
+                font-size: 0.95rem;
+            }
+
+            .submit-btn {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
 
-<nav style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:12px 20px;
-    background:#ffffff;
-    border-bottom:2px solid #D7C4A3;
-    position:sticky;
-    top:0;
-    z-index:100;
-">
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+<nav>
+    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
-        <a href="index.html" style="color:#4E342E; text-decoration:none;">ホーム</a>
-        <a href="newpost.html" style="color:#4E342E; text-decoration:none;">投稿する</a>
-        <a href="profile.html" style="color:#4E342E; text-decoration:none;">プロフィール</a>
-        <a href="notifications.html" style="color:#4E342E; text-decoration:none;">🔔 通知</a>
+    <div style="display:flex; gap:18px; font-weight:600;">
+        <a href="index.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
@@ -79,16 +117,23 @@
 
 <form id="postForm">
 
-    <input id="images" type="file" accept="image/*" multiple>
+    <label>画像を選択</label>
+    <input id="images" type="file" accept="image/*" multiple class="input">
     <div id="preview"></div>
 
+    <label>タイトル</label>
     <input type="text" id="title" class="input" placeholder="タイトル">
-    <input type="text" id="description" class="input" placeholder="説明">
-    <textarea id="content" class="textarea" rows="10" placeholder="本文を書く…"></textarea>
 
-    <div class="genre">
-        <label><input type="radio" name="genre" value="indoor"> インドア</label>
-        <label><input type="radio" name="genre" value="outdoor"> アウトドア</label>
+    <label>説明</label>
+    <input type="text" id="description" class="input" placeholder="説明">
+
+    <label>本文</label>
+    <textarea id="content" class="textarea" rows="8" placeholder="本文を書く…"></textarea>
+
+    <label>カテゴリ</label>
+    <div class="genre" style="margin-bottom:20px;">
+        <label><input type="radio" name="genre" value="indoor"> 🏠 インドア</label><br>
+        <label><input type="radio" name="genre" value="outdoor"> ⛺ アウトドア</label>
     </div>
 
     <button type="submit" class="submit-btn">投稿する</button>
@@ -102,8 +147,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
+// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    apiKey: "YOUR_FIREBASE_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -116,13 +162,13 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 const auth = firebase.auth();
 
-// 🔥 Firebase Auth でログインユーザーを取得
+// 🔥 ログインユーザー取得
 let currentUser = null;
 auth.onAuthStateChanged(user => {
     currentUser = user;
 });
 
-// プレビュー
+// 🔥 プレビュー表示
 document.getElementById("images").addEventListener("change", () => {
     const preview = document.getElementById("preview");
     preview.innerHTML = "";
@@ -138,7 +184,7 @@ document.getElementById("images").addEventListener("change", () => {
     });
 });
 
-// 投稿処理
+// 🔥 投稿処理
 document.getElementById("postForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -147,10 +193,15 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         return;
     }
 
-    const title = document.getElementById("title").value;
-    const description = document.getElementById("description").value;
-    const content = document.getElementById("content").value;
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const content = document.getElementById("content").value.trim();
     const genre = document.querySelector("input[name='genre']:checked")?.value;
+
+    if (!title || !description || !content) {
+        alert("タイトル・説明・本文は必須です");
+        return;
+    }
 
     if (!genre) {
         alert("ジャンルを選んでください");
@@ -160,7 +211,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
     const files = document.getElementById("images").files;
     const imageUrls = [];
 
-    // 画像アップロード
+    // 🔥 画像アップロード
     for (let file of files) {
         const ref = storage.ref("posts/" + Date.now() + "_" + file.name);
         await ref.put(file);
@@ -168,7 +219,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         imageUrls.push(url);
     }
 
-    // Firestore に保存
+    // 🔥 Firestore に保存
     await db.collection("posts").add({
         title,
         description,
