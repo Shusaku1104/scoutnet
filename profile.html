@@ -75,7 +75,7 @@
     <label>自己紹介</label>
     <textarea id="bio-input" rows="4"></textarea>
 
-    <button id="saveBtn" onclick="saveProfile()">保存する</button>
+    <button id="saveBtn">保存する</button>
 
     <!-- フォローボタン（他人のプロフィール時のみ表示） -->
     <button id="followBtn" style="display:none; margin-top:10px;">
@@ -87,6 +87,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -98,137 +99,155 @@ const firebaseConfig = {
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
+const auth = firebase.auth();
 
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-
-// URL の ?id=xxx でプロフィール対象を決定
-const params = new URLSearchParams(location.search);
-const viewUserId = params.get("id") || currentUser.id;
-
-const isMyProfile = (viewUserId === currentUser.id);
-
-const viewUserRef = db.collection("users").doc(viewUserId);
-const myRef = db.collection("users").doc(currentUser.id);
-
+let currentUser = null;
+let viewUserId = null;
+let isMyProfile = false;
 let selectedImageFile = null;
 
-/* -------------------------
-   通知送信
-------------------------- */
-async function sendNotification(toUserId, type, postId) {
-    await db.collection("notifications").add({
-        userId: toUserId,
-        type: type,
-        postId: postId,
-        fromUserId: currentUser.id,
-        fromUserName: currentUser.name,
-        createdAt: new Date()
-    });
-}
+const profileImg = document.getElementById("profile-img");
+const imgInput = document.getElementById("img-input");
+const nameInput = document.getElementById("name-input");
+const bioInput = document.getElementById("bio-input");
+const saveBtn = document.getElementById("saveBtn");
+const followBtn = document.getElementById("followBtn");
 
-/* -------------------------
-   画像選択 → プレビュー
-------------------------- */
-document.getElementById("img-input").addEventListener("change", (e) => {
+// 🔥 ログインチェック & プロフィール対象決定
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+    currentUser = user;
+
+    const params = new URLSearchParams(location.search);
+    // ?id=xxx があればそのユーザー、なければ自分
+    viewUserId = params.get("id") || currentUser.uid;
+    isMyProfile = (viewUserId === currentUser.uid);
+
+    const viewUserRef = db.collection("users").doc(viewUserId);
+    const myRef = db.collection("users").doc(currentUser.uid);
+
+    // 🔥 プロフィール読み込み
+    viewUserRef.get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.iconUrl) profileImg.src = data.iconUrl;
+            nameInput.value = data.name || "";
+            bioInput.value = data.bio || "";
+        } else {
+            // ドキュメントがない場合、自分のプロフィールなら最低限作っておく
+            if (isMyProfile) {
+                myRef.set({
+                    name: currentUser.email,
+                    bio: "",
+                    iconUrl: "",
+                    following: [],
+                    followers: []
+                }, { merge: true });
+                nameInput.value = currentUser.email;
+            }
+        }
+    });
+
+    // 🔥 自分のプロフィールかどうかで UI 切り替え
+    if (!isMyProfile) {
+        // 他人のプロフィール → 編集不可
+        saveBtn.style.display = "none";
+        imgInput.style.display = "none";
+        nameInput.disabled = true;
+        bioInput.disabled = true;
+
+        // フォローボタン表示
+        followBtn.style.display = "block";
+
+        // フォロー状態監視
+        viewUserRef.onSnapshot(doc => {
+            const data = doc.data() || {};
+            const followers = data.followers || [];
+            if (followers.includes(currentUser.uid)) {
+                followBtn.textContent = "フォロー解除";
+            } else {
+                followBtn.textContent = "フォローする";
+            }
+        });
+
+        // フォロー / 解除
+        followBtn.addEventListener("click", async () => {
+            const userDoc = await viewUserRef.get();
+            const userData = userDoc.data() || {};
+            let followers = userData.followers || [];
+
+            const myDoc = await myRef.get();
+            const myData = myDoc.data() || {};
+            let following = myData.following || [];
+
+            if (followers.includes(currentUser.uid)) {
+                // フォロー解除
+                followers = followers.filter(id => id !== currentUser.uid);
+                following = following.filter(id => id !== viewUserId);
+            } else {
+                // フォロー
+                followers.push(currentUser.uid);
+                following.push(viewUserId);
+
+                // 通知
+                await sendNotification(viewUserId, "follow", null);
+            }
+
+            await viewUserRef.update({ followers });
+            await myRef.set({ following }, { merge: true });
+        });
+    }
+
+    // 🔥 保存ボタン（自分のプロフィールのみ）
+    saveBtn.addEventListener("click", async () => {
+        const name = nameInput.value.trim();
+        const bio = bioInput.value.trim();
+
+        let iconUrl = profileImg.src || "";
+
+        if (selectedImageFile) {
+            const ref = storage.ref("icons/" + currentUser.uid + ".jpg");
+            await ref.put(selectedImageFile);
+            iconUrl = await ref.getDownloadURL();
+        }
+
+        await myRef.set({
+            name,
+            bio,
+            iconUrl
+        }, { merge: true });
+
+        alert("プロフィールを保存しました！");
+    });
+});
+
+// 🔥 画像選択 → プレビュー
+imgInput.addEventListener("change", (e) => {
     selectedImageFile = e.target.files[0];
     if (!selectedImageFile) return;
 
     const reader = new FileReader();
     reader.onload = () => {
-        document.getElementById("profile-img").src = reader.result;
+        profileImg.src = reader.result;
     };
     reader.readAsDataURL(selectedImageFile);
 });
 
-/* -------------------------
-   Firestore にプロフィール保存
-------------------------- */
-async function saveProfile() {
-    const name = document.getElementById("name-input").value;
-    const bio = document.getElementById("bio-input").value;
-
-    let iconUrl = null;
-
-    if (selectedImageFile) {
-        const ref = storage.ref("icons/" + currentUser.id + ".jpg");
-        await ref.put(selectedImageFile);
-        iconUrl = await ref.getDownloadURL();
-    }
-
-    await myRef.set({
-        name,
-        bio,
-        iconUrl: iconUrl || document.getElementById("profile-img").src
-    }, { merge: true });
-
-    alert("プロフィールを保存しました！");
-}
-
-/* -------------------------
-   プロフィール読み込み
-------------------------- */
-viewUserRef.get().then(doc => {
-    if (doc.exists) {
-        const data = doc.data();
-        document.getElementById("profile-img").src = data.iconUrl || "";
-        document.getElementById("name-input").value = data.name || "";
-        document.getElementById("bio-input").value = data.bio || "";
-    }
-});
-
-/* -------------------------
-   自分のプロフィールか判定
-------------------------- */
-if (!isMyProfile) {
-    // 他人のプロフィール → 編集不可
-    document.getElementById("saveBtn").style.display = "none";
-    document.getElementById("img-input").style.display = "none";
-    document.getElementById("name-input").disabled = true;
-    document.getElementById("bio-input").disabled = true;
-
-    // フォローボタン表示
-    const followBtn = document.getElementById("followBtn");
-    followBtn.style.display = "block";
-
-    // フォロー状態チェック
-    viewUserRef.onSnapshot(async doc => {
-        const data = doc.data();
-        const followers = data.followers || [];
-
-        if (followers.includes(currentUser.id)) {
-            followBtn.textContent = "フォロー解除";
-        } else {
-            followBtn.textContent = "フォローする";
-        }
-    });
-
-    // フォロー / 解除
-    followBtn.addEventListener("click", async () => {
-        const userDoc = await viewUserRef.get();
-        const userData = userDoc.data();
-        let followers = userData.followers || [];
-
-        const myDoc = await myRef.get();
-        let following = myDoc.data().following || [];
-
-        if (followers.includes(currentUser.id)) {
-            // フォロー解除
-            followers = followers.filter(id => id !== currentUser.id);
-            following = following.filter(id => id !== viewUserId);
-        } else {
-            // フォロー
-            followers.push(currentUser.id);
-            following.push(viewUserId);
-
-            // 通知
-            sendNotification(viewUserId, "follow", null);
-        }
-
-        await viewUserRef.update({ followers });
-        await myRef.update({ following });
+// 🔥 通知送信
+async function sendNotification(toUserId, type, postId) {
+    await db.collection("notifications").add({
+        userId: toUserId,
+        type: type,
+        postId: postId,
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.email,
+        createdAt: new Date()
     });
 }
 </script>

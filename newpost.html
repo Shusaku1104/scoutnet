@@ -84,7 +84,7 @@
 
     <input type="text" id="title" class="input" placeholder="タイトル">
     <input type="text" id="description" class="input" placeholder="説明">
-    <textarea id="content" class="textarea" rows="5" placeholder="本文を書く…"></textarea>
+    <textarea id="content" class="textarea" rows="10" placeholder="本文を書く…"></textarea>
 
     <div class="genre">
         <label><input type="radio" name="genre" value="indoor"> インドア</label>
@@ -99,6 +99,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -110,9 +111,16 @@ const firebaseConfig = {
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
+const auth = firebase.auth();
+
+// 🔥 Firebase Auth でログインユーザーを取得
+let currentUser = null;
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+});
 
 // プレビュー
 document.getElementById("images").addEventListener("change", () => {
@@ -134,6 +142,11 @@ document.getElementById("images").addEventListener("change", () => {
 document.getElementById("postForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    if (!currentUser) {
+        alert("ログインしてください");
+        return;
+    }
+
     const title = document.getElementById("title").value;
     const description = document.getElementById("description").value;
     const content = document.getElementById("content").value;
@@ -144,9 +157,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         return;
     }
 
-    const user = JSON.parse(localStorage.getItem("currentUser"));
     const files = document.getElementById("images").files;
-
     const imageUrls = [];
 
     // 画像アップロード
@@ -164,8 +175,8 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         content,
         genre,
         images: imageUrls,
-        userId: user.id,
-        userName: user.name,
+        userId: currentUser.uid,
+        userName: currentUser.email,
         createdAt: new Date()
     });
 

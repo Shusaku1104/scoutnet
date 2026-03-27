@@ -60,23 +60,14 @@
 </head>
 <body>
 
-<script>
-// ★ 自動ログイン（rememberUser があれば即ログイン）
-const remember = JSON.parse(localStorage.getItem("rememberUser") || "null");
-if (remember) {
-    localStorage.setItem("currentUser", remember.id);
-    location.href = "index.html";
-}
-</script>
-
 <h2>ScoutNet ログイン</h2>
 
 <!-- ログインフォーム -->
 <div class="box">
     <h3>ログイン</h3>
-    <form onsubmit="return loginUser()">
-        <input id="login-id" type="text" placeholder="ユーザーID" required>
-        <input id="login-pass" type="password" placeholder="パスコード" required>
+    <form id="loginForm">
+        <input id="login-email" type="email" placeholder="メールアドレス" required>
+        <input id="login-pass" type="password" placeholder="パスワード" required>
         <button type="submit">ログイン</button>
     </form>
 </div>
@@ -84,80 +75,67 @@ if (remember) {
 <!-- 新規登録フォーム -->
 <div class="box">
     <h3>新規アカウント作成</h3>
-    <form onsubmit="return registerUser()">
-        <input id="reg-id" type="text" placeholder="ユーザーID" required>
-        <input id="reg-pass" type="password" placeholder="パスコード" required>
-        <input id="reg-pass2" type="password" placeholder="パスコード（確認）" required>
+    <form id="registerForm">
+        <input id="reg-email" type="email" placeholder="メールアドレス" required>
+        <input id="reg-pass" type="password" placeholder="パスワード" required>
         <button type="submit">アカウント作成</button>
     </form>
 </div>
 
-<script>
-// 新規登録
-function registerUser() {
-    const id = document.getElementById("reg-id").value.trim();
-    const pass = document.getElementById("reg-pass").value.trim();
-    const pass2 = document.getElementById("reg-pass2").value.trim();
+<!-- Firebase Auth -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    if (pass !== pass2) {
-        alert("パスコードが一致しません");
-        return false;
-    }
-
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
-
-    if (users[id]) {
-        alert("このユーザーIDは既に存在します");
-        return false;
-    }
-
-    users[id] = {
-        pass: pass,
-        icon: "",
-        bio: "",
-        following: [],
-        followers: [],
-        notifications: []
+    const firebaseConfig = {
+        apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+        authDomain: "scoutnet-3ccb1.firebaseapp.com",
+        projectId: "scoutnet-3ccb1",
+        storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+        messagingSenderId: "619869604171",
+        appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
     };
 
-    localStorage.setItem("users", JSON.stringify(users));
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    // ★ 自動ログイン用に保存
-    localStorage.setItem("rememberUser", JSON.stringify({ id, pass }));
+    // ★ 自動ログイン（Firebase が管理）
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            location.href = "index.html";
+        }
+    });
 
-    // ★ 現在のログインユーザー
-    localStorage.setItem("currentUser", id);
+    // ★ 新規登録
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    location.href = "index.html";
-    return false;
-}
+        const email = document.getElementById("reg-email").value;
+        const pass = document.getElementById("reg-pass").value;
 
-// ログイン
-function loginUser() {
-    const id = document.getElementById("login-id").value.trim();
-    const pass = document.getElementById("login-pass").value.trim();
+        try {
+            await createUserWithEmailAndPassword(auth, email, pass);
+            alert("アカウントを作成しました！");
+        } catch (err) {
+            alert("エラー：" + err.message);
+        }
+    });
 
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    // ★ ログイン
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    if (!users[id]) {
-        alert("このユーザーIDは存在しません");
-        return false;
-    }
+        const email = document.getElementById("login-email").value;
+        const pass = document.getElementById("login-pass").value;
 
-    if (users[id].pass !== pass) {
-        alert("パスコードが違います");
-        return false;
-    }
-
-    // ★ 自動ログイン用に保存
-    localStorage.setItem("rememberUser", JSON.stringify({ id, pass }));
-
-    // ★ 現在のログインユーザー
-    localStorage.setItem("currentUser", id);
-
-    location.href = "index.html";
-    return false;
-}
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+            alert("ログインしました！");
+        } catch (err) {
+            alert("ログイン失敗：" + err.message);
+        }
+    });
 </script>
 
 </body>
