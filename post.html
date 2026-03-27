@@ -6,6 +6,11 @@
     <title>ScoutNet - 投稿詳細</title>
 
     <style>
+        /* 端末幅に応じてフォント自動調整 */
+        html {
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
@@ -20,7 +25,7 @@
             border-radius: 16px;
             border: 2px solid #D7C4A3;
             box-shadow: 0 4px 0 #D7C4A3;
-            max-width: 600px;
+            max-width: 700px;
             margin: auto;
         }
 
@@ -31,13 +36,13 @@
         }
 
         .meta {
-            font-size: 14px;
+            font-size: 0.9rem;
             color: #6d6d6d;
             margin-bottom: 10px;
         }
 
         .likeBtn {
-            font-size: 20px;
+            font-size: 1.3rem;
             cursor: pointer;
             margin-top: 10px;
             display: inline-block;
@@ -68,11 +73,26 @@
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 1.1rem;
             font-weight: 600;
             box-shadow: 0 3px 0 #7F0000;
             cursor: pointer;
             display: none;
+        }
+
+        /* スマホ向け最適化 */
+        @media (max-width: 480px) {
+            .post-card {
+                padding: 16px;
+            }
+
+            .likeBtn {
+                font-size: 1.2rem;
+            }
+
+            #deleteBtn {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -91,7 +111,7 @@
         <div id="commentList"></div>
 
         <textarea id="commentInput" rows="3" style="width:100%; margin-top:10px;" placeholder="コメントを書く…"></textarea>
-        <button id="commentBtn" style="margin-top:10px; width:100%; padding:10px; background:#2E7D32; color:white; border:none; border-radius:8px; font-size:16px;">
+        <button id="commentBtn" style="margin-top:10px; width:100%; padding:10px; background:#2E7D32; color:white; border:none; border-radius:8px; font-size:1rem;">
             コメントする
         </button>
     </div>
@@ -106,8 +126,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
+// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    apiKey: "YOUR_FIREBASE_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -127,7 +148,7 @@ let currentUser = null;
 let postOwnerId = null;
 let postImages = [];
 
-// 🔥 Firebase Auth でログインチェック
+// 🔥 ログインチェック
 auth.onAuthStateChanged(user => {
     if (!user) {
         location.href = "login.html";
@@ -136,6 +157,7 @@ auth.onAuthStateChanged(user => {
     currentUser = user;
 });
 
+// 🔥 通知送信
 async function sendNotification(toUserId, type, postId) {
     await db.collection("notifications").add({
         userId: toUserId,
@@ -147,6 +169,7 @@ async function sendNotification(toUserId, type, postId) {
     });
 }
 
+// 🔥 いいね処理
 async function toggleLike() {
     const ref = db.collection("posts").doc(postId);
     const snap = await ref.get();
@@ -166,6 +189,7 @@ async function toggleLike() {
     await ref.update({ likes });
 }
 
+// 🔥 コメント送信
 async function sendComment() {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
@@ -184,6 +208,7 @@ async function sendComment() {
     document.getElementById("commentInput").value = "";
 }
 
+// 🔥 コメント読み込み
 function loadComments() {
     db.collection("posts").doc(postId)
       .collection("comments")
@@ -205,6 +230,7 @@ function loadComments() {
       });
 }
 
+// 🔥 投稿削除
 async function deletePost() {
     if (!confirm("本当に削除しますか？")) return;
 
@@ -230,6 +256,7 @@ async function deletePost() {
     location.href = "index.html";
 }
 
+// 🔥 投稿読み込み
 db.collection("posts").doc(postId).onSnapshot(doc => {
     if (!doc.exists) {
         document.getElementById("title").innerText = "投稿が見つかりません";
@@ -256,7 +283,6 @@ db.collection("posts").doc(postId).onSnapshot(doc => {
     const likes = post.likes || [];
     document.getElementById("likeBtn").innerText = `❤️ ${likes.length}`;
 
-    // 🔥 自分の投稿なら削除ボタン表示
     if (postOwnerId === currentUser.uid) {
         document.getElementById("deleteBtn").style.display = "block";
     }
