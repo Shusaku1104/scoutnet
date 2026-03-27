@@ -6,7 +6,6 @@
     <title>ScoutNet - ホーム</title>
 
     <style>
-        /* ベースフォント（端末幅で自動調整） */
         html {
             font-size: clamp(14px, 2.5vw, 18px);
         }
@@ -70,7 +69,6 @@
             margin-top: 8px;
         }
 
-        /* スマホ向け最適化 */
         @media (max-width: 480px) {
             nav div:first-child {
                 font-size: 1.2rem;
@@ -117,9 +115,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
-// 🔥 GitHub に公開しても安全なダミー設定
+// 🔥 本物の Firebase 設定をここに入れる
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
+    apiKey: "YOUR_REAL_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -133,7 +131,7 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
-// 🔥 Firebase Auth でログインチェック
+// 🔥 ログインチェック
 auth.onAuthStateChanged(user => {
     if (!user) {
         location.href = "login.html";
@@ -145,7 +143,7 @@ auth.onAuthStateChanged(user => {
 const postList = document.getElementById("postList");
 
 /* -------------------------
-   通知送信関数
+   通知送信
 ------------------------- */
 async function sendNotification(toUserId, type, postId) {
     await db.collection("notifications").add({
@@ -182,7 +180,7 @@ async function toggleLike(postId, postOwnerId) {
 }
 
 /* -------------------------
-   Firestore から投稿を読み込む
+   投稿読み込み
 ------------------------- */
 db.collection("posts")
   .orderBy("createdAt", "desc")
