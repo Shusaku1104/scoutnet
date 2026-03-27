@@ -90,8 +90,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
+// 🔥 GitHub に公開しても安全なダミー設定
+// 本物のキーはローカルだけに置くこと
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    apiKey: "YOUR_FIREBASE_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -125,7 +127,6 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user;
 
     const params = new URLSearchParams(location.search);
-    // ?id=xxx があればそのユーザー、なければ自分
     viewUserId = params.get("id") || currentUser.uid;
     isMyProfile = (viewUserId === currentUser.uid);
 
@@ -140,7 +141,6 @@ auth.onAuthStateChanged(async (user) => {
             nameInput.value = data.name || "";
             bioInput.value = data.bio || "";
         } else {
-            // ドキュメントがない場合、自分のプロフィールなら最低限作っておく
             if (isMyProfile) {
                 myRef.set({
                     name: currentUser.email,
@@ -156,27 +156,20 @@ auth.onAuthStateChanged(async (user) => {
 
     // 🔥 自分のプロフィールかどうかで UI 切り替え
     if (!isMyProfile) {
-        // 他人のプロフィール → 編集不可
         saveBtn.style.display = "none";
         imgInput.style.display = "none";
         nameInput.disabled = true;
         bioInput.disabled = true;
 
-        // フォローボタン表示
         followBtn.style.display = "block";
 
-        // フォロー状態監視
         viewUserRef.onSnapshot(doc => {
             const data = doc.data() || {};
             const followers = data.followers || [];
-            if (followers.includes(currentUser.uid)) {
-                followBtn.textContent = "フォロー解除";
-            } else {
-                followBtn.textContent = "フォローする";
-            }
+            followBtn.textContent =
+                followers.includes(currentUser.uid) ? "フォロー解除" : "フォローする";
         });
 
-        // フォロー / 解除
         followBtn.addEventListener("click", async () => {
             const userDoc = await viewUserRef.get();
             const userData = userDoc.data() || {};
@@ -187,15 +180,11 @@ auth.onAuthStateChanged(async (user) => {
             let following = myData.following || [];
 
             if (followers.includes(currentUser.uid)) {
-                // フォロー解除
                 followers = followers.filter(id => id !== currentUser.uid);
                 following = following.filter(id => id !== viewUserId);
             } else {
-                // フォロー
                 followers.push(currentUser.uid);
                 following.push(viewUserId);
-
-                // 通知
                 await sendNotification(viewUserId, "follow", null);
             }
 
@@ -204,7 +193,7 @@ auth.onAuthStateChanged(async (user) => {
         });
     }
 
-    // 🔥 保存ボタン（自分のプロフィールのみ）
+    // 🔥 保存ボタン
     saveBtn.addEventListener("click", async () => {
         const name = nameInput.value.trim();
         const bio = bioInput.value.trim();
@@ -217,11 +206,7 @@ auth.onAuthStateChanged(async (user) => {
             iconUrl = await ref.getDownloadURL();
         }
 
-        await myRef.set({
-            name,
-            bio,
-            iconUrl
-        }, { merge: true });
+        await myRef.set({ name, bio, iconUrl }, { merge: true });
 
         alert("プロフィールを保存しました！");
     });
@@ -243,8 +228,8 @@ imgInput.addEventListener("change", (e) => {
 async function sendNotification(toUserId, type, postId) {
     await db.collection("notifications").add({
         userId: toUserId,
-        type: type,
-        postId: postId,
+        type,
+        postId,
         fromUserId: currentUser.uid,
         fromUserName: currentUser.email,
         createdAt: new Date()
