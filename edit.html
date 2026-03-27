@@ -3,8 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>ScoutNet - 投稿編集</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
+        /* 端末幅に応じてフォント自動調整 */
+        html {
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
@@ -29,6 +35,7 @@
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
+            font-size: 0.9rem;
         }
 
         .card {
@@ -46,7 +53,7 @@
             padding: 12px;
             border: 1px solid #D7C4A3;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 1rem;
             background: #fff;
             margin-bottom: 16px;
         }
@@ -58,7 +65,7 @@
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 3px 0 #1B5E20;
@@ -69,16 +76,40 @@
             border-radius: 12px;
             margin-top: 10px;
         }
+
+        /* スマホ向け最適化 */
+        @media (max-width: 480px) {
+            nav div:first-child {
+                font-size: 1.2rem;
+            }
+
+            nav a {
+                font-size: 0.8rem;
+            }
+
+            .card {
+                margin: 12px;
+                padding: 16px;
+            }
+
+            .input {
+                font-size: 0.95rem;
+            }
+
+            .submit-btn {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
 
 <nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
+    <div style="display:flex; gap:18px; font-weight:600;">
         <a href="index.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
@@ -87,7 +118,7 @@
 </nav>
 
 <div class="card">
-    <h2>投稿を編集</h2>
+    <h2 style="font-size:1.4rem;">投稿を編集</h2>
 
     <label>タイトル</label>
     <input type="text" id="title" class="input">
@@ -116,8 +147,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
+// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    apiKey: "YOUR_FIREBASE_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
