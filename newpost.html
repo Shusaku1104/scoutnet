@@ -2,54 +2,47 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet - 新規投稿</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規投稿 - ScoutNet</title>
 
     <style>
-        /* 端末幅に応じてフォント自動調整 */
-        html {
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
-
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
             padding: 20px;
-            margin: 0;
-            color: #4E342E;
             max-width: 700px;
             margin: auto;
+            color: #4E342E;
         }
 
         nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
-            background:#ffffff;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:0;
-            z-index:100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 2px solid #D7C4A3;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin: -20px -20px 20px -20px;
         }
 
         nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            font-size: 0.9rem;
+            color: #4E342E;
+            text-decoration: none;
+            font-weight: 600;
         }
 
         h2 {
-            margin: 20px 0;
+            margin-bottom: 20px;
             font-size: 1.4rem;
-            color: #2E7D32;
         }
 
         .input, .textarea {
             width: 100%;
             padding: 12px;
-            border: 1px solid #D7C4A3;
+            border: 2px solid #D7C4A3;
             border-radius: 10px;
             margin-bottom: 20px;
             font-size: 1rem;
@@ -71,30 +64,20 @@
             border-radius: 10px;
             font-size: 1.1rem;
             cursor: pointer;
-            box-shadow: 0 3px 0 #1B5E20;
+            box-shadow: 0 4px 0 #1B5E20;
         }
 
         .submit-btn:hover {
-            background: #1B5E20;
+            background: #27682B;
         }
 
-        /* スマホ向け最適化 */
-        @media (max-width: 480px) {
-            nav div:first-child {
-                font-size: 1.2rem;
-            }
+        .genre {
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
 
-            nav a {
-                font-size: 0.8rem;
-            }
-
-            .input, .textarea {
-                font-size: 0.95rem;
-            }
-
-            .submit-btn {
-                font-size: 1rem;
-            }
+        .genre label {
+            margin-right: 20px;
         }
     </style>
 </head>
@@ -106,7 +89,7 @@
     </div>
 
     <div style="display:flex; gap:18px; font-weight:600;">
-        <a href="index.html">ホーム</a>
+        <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
@@ -117,23 +100,16 @@
 
 <form id="postForm">
 
-    <label>画像を選択</label>
-    <input id="images" type="file" accept="image/*" multiple class="input">
+    <input id="images" type="file" accept="image/*" multiple>
     <div id="preview"></div>
 
-    <label>タイトル</label>
     <input type="text" id="title" class="input" placeholder="タイトル">
-
-    <label>説明</label>
     <input type="text" id="description" class="input" placeholder="説明">
+    <textarea id="content" class="textarea" rows="10" placeholder="本文を書く…"></textarea>
 
-    <label>本文</label>
-    <textarea id="content" class="textarea" rows="8" placeholder="本文を書く…"></textarea>
-
-    <label>カテゴリ</label>
-    <div class="genre" style="margin-bottom:20px;">
-        <label><input type="radio" name="genre" value="indoor"> 🏠 インドア</label><br>
-        <label><input type="radio" name="genre" value="outdoor"> ⛺ アウトドア</label>
+    <div class="genre">
+        <label><input type="radio" name="genre" value="indoor"> インドア</label>
+        <label><input type="radio" name="genre" value="outdoor"> アウトドア</label>
     </div>
 
     <button type="submit" class="submit-btn">投稿する</button>
@@ -147,9 +123,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
-// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
+    apiKey: "YOUR_REAL_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -162,13 +137,17 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 const auth = firebase.auth();
 
-// 🔥 ログインユーザー取得
+// 🔥 ログイン必須
 let currentUser = null;
 auth.onAuthStateChanged(user => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
     currentUser = user;
 });
 
-// 🔥 プレビュー表示
+// 🔥 プレビュー
 document.getElementById("images").addEventListener("change", () => {
     const preview = document.getElementById("preview");
     preview.innerHTML = "";
@@ -193,15 +172,10 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         return;
     }
 
-    const title = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value.trim();
-    const content = document.getElementById("content").value.trim();
+    const title = document.getElementById("title").value;
+    const description = document.getElementById("description").value;
+    const content = document.getElementById("content").value;
     const genre = document.querySelector("input[name='genre']:checked")?.value;
-
-    if (!title || !description || !content) {
-        alert("タイトル・説明・本文は必須です");
-        return;
-    }
 
     if (!genre) {
         alert("ジャンルを選んでください");
@@ -228,11 +202,12 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
         images: imageUrls,
         userId: currentUser.uid,
         userName: currentUser.email,
-        createdAt: new Date()
+        createdAt: new Date(),
+        likes: []
     });
 
     alert("投稿しました！");
-    location.href = "index.html";
+    location.href = "home.html";  // ← 投稿後はホームへ
 });
 </script>
 

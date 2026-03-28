@@ -6,6 +6,10 @@
     <title>ScoutNet - ホーム</title>
 
     <style>
+        html {
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background: #f5f5f5;
@@ -30,6 +34,7 @@
             color: #4E342E;
             text-decoration: none;
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .card {
@@ -58,22 +63,41 @@
         }
 
         .likeBtn {
-            font-size: 18px;
+            font-size: 1.1rem;
             cursor: pointer;
             display: inline-block;
             margin-top: 8px;
+        }
+
+        @media (max-width: 480px) {
+            nav div:first-child {
+                font-size: 1.2rem;
+            }
+
+            nav a {
+                font-size: 0.8rem;
+            }
+
+            .card {
+                margin: 12px;
+                padding: 16px;
+            }
+
+            .post {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
 
 <nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
-        <a href="index.html">ホーム</a>
+    <div style="display:flex; gap:18px; font-weight:600;">
+        <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
@@ -81,7 +105,7 @@
 </nav>
 
 <div class="card">
-    <h2>新着投稿</h2>
+    <h2 style="font-size:1.4rem;">新着投稿</h2>
     <div id="postList"></div>
 </div>
 
@@ -91,8 +115,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 
 <script>
+// 🔥 本物の Firebase 設定を入れる
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
+    apiKey: "YOUR_REAL_API_KEY",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -106,7 +131,7 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
-// 🔥 Firebase Auth でログインチェック
+// 🔥 ログインチェック
 auth.onAuthStateChanged(user => {
     if (!user) {
         location.href = "login.html";
@@ -118,7 +143,7 @@ auth.onAuthStateChanged(user => {
 const postList = document.getElementById("postList");
 
 /* -------------------------
-   通知送信関数
+   通知送信
 ------------------------- */
 async function sendNotification(toUserId, type, postId) {
     await db.collection("notifications").add({
@@ -155,7 +180,7 @@ async function toggleLike(postId, postOwnerId) {
 }
 
 /* -------------------------
-   Firestore から投稿を読み込む
+   投稿読み込み
 ------------------------- */
 db.collection("posts")
   .orderBy("createdAt", "desc")
@@ -180,7 +205,7 @@ db.collection("posts")
           }
 
           div.innerHTML += `
-              <h3>${post.title}</h3>
+              <h3 style="font-size:1.2rem;">${post.title}</h3>
               <p>${post.description}</p>
           `;
 
