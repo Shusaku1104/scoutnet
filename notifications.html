@@ -2,21 +2,16 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet - 通知</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScoutNet - 新規投稿</title>
 
     <style>
-        /* 端末幅に応じてフォント自動調整 */
-        html {
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
-
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            color: #4E342E;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
         }
 
         nav {
@@ -24,7 +19,7 @@
             justify-content:space-between;
             align-items:center;
             padding:12px 20px;
-            background:#ffffff;
+            background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
@@ -35,88 +30,106 @@
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            font-size: 0.9rem;
+            margin-left:15px;
+        }
+
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
         }
 
         .card {
-            background: #FFFFFF;
-            padding: 20px;
-            border-radius: 16px;
-            border: 2px solid #D7C4A3;
-            margin: 20px;
-            box-shadow: 0 4px 0 #D7C4A3;
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:20px;
+            box-shadow:0 4px 0 #D7C4A3;
         }
 
-        h2 {
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #2E7D32;
-            border-left: 6px solid #66BB6A;
-            padding-left: 10px;
-            font-size: 1.4rem;
-        }
-
-        .notification {
-            background:#F1F8E9;
+        input, textarea {
+            width:100%;
             padding:12px;
-            border-radius:12px;
-            border:1px solid #C5E1A5;
-            margin-bottom:10px;
-            cursor: pointer;
-            font-size: 1rem;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-bottom:15px;
+            font-size:16px;
         }
 
-        /* スマホ向け最適化 */
-        @media (max-width: 480px) {
-            nav div:first-child {
-                font-size: 1.2rem;
-            }
+        .btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+            margin-top:10px;
+        }
 
-            nav a {
-                font-size: 0.8rem;
-            }
+        .preview-img {
+            width:100%;
+            border-radius:12px;
+            margin-bottom:10px;
+        }
 
-            .card {
-                margin: 12px;
-                padding: 16px;
-            }
+        .file-item {
+            margin-bottom:8px;
+            font-size:15px;
+        }
 
-            .notification {
-                font-size: 0.95rem;
-                padding: 10px;
-            }
+        @media (max-width:480px) {
+            input, textarea { font-size:15px; }
         }
     </style>
 </head>
 <body>
 
+<!-- ナビバー -->
 <nav>
-    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-weight:600;">
-        <a href="index.html">ホーム</a>
-        <a href="newpost.html">投稿する</a>
+    <div>
+        <a href="home.html">ホーム</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
-<div class="card">
-    <h2>通知一覧</h2>
-    <div id="notificationList"></div>
+<div class="container">
+    <div class="card">
+
+        <h2>新規投稿</h2>
+
+        <input id="title" placeholder="タイトル">
+
+        <textarea id="description" rows="5" placeholder="説明文"></textarea>
+
+        <h3>📷 画像を選択（複数OK）</h3>
+        <input type="file" id="images" accept="image/*" multiple>
+        <div id="imagePreview"></div>
+
+        <h3>📎 ファイルを選択（複数OK）</h3>
+        <input type="file" id="files" multiple>
+        <div id="fileList"></div>
+
+        <button class="btn" id="postBtn">投稿する</button>
+
+    </div>
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-<script>
-// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -124,67 +137,82 @@ const firebaseConfig = {
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-const list = document.getElementById("notificationList");
+// ログインチェック
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
 
-let currentUser = null;
+// 画像プレビュー
+document.getElementById("images").addEventListener("change", e => {
+    const preview = document.getElementById("imagePreview");
+    preview.innerHTML = "";
 
-// 🔥 Firebase Auth でログインチェック
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-    currentUser = user;
-
-    loadNotifications();
+    [...e.target.files].forEach(file => {
+        const img = document.createElement("img");
+        img.className = "preview-img";
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+    });
 });
 
-// 🔥 通知読み込み
-function loadNotifications() {
-    db.collection("notifications")
-      .where("userId", "==", currentUser.uid)
-      .orderBy("createdAt", "desc")
-      .onSnapshot(snapshot => {
-          list.innerHTML = "";
+// ファイル一覧表示
+document.getElementById("files").addEventListener("change", e => {
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
 
-          if (snapshot.empty) {
-              list.innerHTML = "<p>通知はありません。</p>";
-              return;
-          }
+    [...e.target.files].forEach(file => {
+        list.innerHTML += `<div class="file-item">📄 ${file.name}</div>`;
+    });
+});
 
-          snapshot.forEach(doc => {
-              const n = doc.data();
-              const div = document.createElement("div");
-              div.className = "notification";
+// 投稿処理
+document.getElementById("postBtn").addEventListener("click", async () => {
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
 
-              // 通知メッセージ
-              let text = "";
+    if (!title || !description) {
+        alert("タイトルと説明文は必須です");
+        return;
+    }
 
-              if (n.type === "like") {
-                  text = `❤️ ${n.fromUserName} さんがあなたの投稿にいいねしました`;
-              } else if (n.type === "comment") {
-                  text = `💬 ${n.fromUserName} さんがあなたの投稿にコメントしました`;
-              } else if (n.type === "follow") {
-                  text = `👤 ${n.fromUserName} さんがあなたをフォローしました`;
-              }
+    const imageFiles = document.getElementById("images").files;
+    const otherFiles = document.getElementById("files").files;
 
-              div.textContent = text;
+    const imageURLs = [];
+    const fileURLs = [];
 
-              // 投稿に関連する通知なら、クリックで投稿へ
-              if (n.postId) {
-                  div.addEventListener("click", () => {
-                      location.href = "post.html?id=" + n.postId;
-                  });
-              }
+    // 画像アップロード
+    for (let file of imageFiles) {
+        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        imageURLs.push(url);
+    }
 
-              list.appendChild(div);
-          });
-      });
-}
+    // ファイルアップロード
+    for (let file of otherFiles) {
+        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        fileURLs.push(url);
+    }
+
+    // Firestore に保存
+    await addDoc(collection(db, "posts"), {
+        title,
+        description,
+        images: imageURLs,
+        files: fileURLs,
+        createdBy: currentUser,
+        createdAt: Date.now()
+    });
+
+    alert("投稿しました！");
+    location.href = "home.html";
+});
 </script>
 
 </body>

@@ -2,133 +2,208 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScoutNet - 投稿詳細</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
-        /* 端末幅に応じてフォント自動調整 */
-        html {
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
-
         body {
-            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-            color: #4E342E;
+            font-family: "Hiragigino Sans", "Yu Gothic", sans-serif;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
         }
 
+        /* ナビバー */
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:white;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            margin-left:15px;
+        }
+
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
+        }
+
+        /* 投稿カード */
         .post-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 16px;
-            border: 2px solid #D7C4A3;
-            box-shadow: 0 4px 0 #D7C4A3;
-            max-width: 700px;
-            margin: auto;
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:16px;
+            box-shadow:0 4px 0 #D7C4A3;
         }
 
-        img {
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 15px;
+        /* 画像スライド */
+        .slider {
+            position:relative;
+            width:100%;
+            overflow:hidden;
+            border-radius:12px;
+            margin-bottom:15px;
         }
 
-        .meta {
-            font-size: 0.9rem;
-            color: #6d6d6d;
-            margin-bottom: 10px;
+        .slides {
+            display:flex;
+            transition:0.4s;
         }
 
-        .likeBtn {
-            font-size: 1.3rem;
-            cursor: pointer;
-            margin-top: 10px;
-            display: inline-block;
+        .slides img {
+            width:100%;
+            border-radius:12px;
         }
 
-        .comment-box {
-            margin-top: 25px;
+        .dots {
+            text-align:center;
+            margin-top:8px;
         }
 
+        .dot {
+            height:10px;
+            width:10px;
+            margin:0 4px;
+            background:#D7C4A3;
+            border-radius:50%;
+            display:inline-block;
+        }
+
+        .dot.active {
+            background:#2E7D32;
+        }
+
+        .title {
+            font-size:22px;
+            font-weight:700;
+            margin-bottom:10px;
+        }
+
+        .desc {
+            font-size:16px;
+            margin-bottom:15px;
+        }
+
+        /* ファイル一覧 */
+        .file {
+            margin-bottom:8px;
+            font-size:16px;
+        }
+
+        .file a {
+            color:#2E7D32;
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        /* コメント */
         .comment {
-            background: #fff;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #D7C4A3;
-            margin-bottom: 10px;
+            background:#fafafa;
+            border:1px solid #D7C4A3;
+            padding:10px;
+            border-radius:10px;
+            margin-bottom:10px;
         }
 
         .comment-user {
-            font-weight: bold;
-            color: #2E7D32;
+            font-weight:600;
+            margin-bottom:4px;
         }
 
-        #deleteBtn {
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            background: #B71C1C;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            box-shadow: 0 3px 0 #7F0000;
-            cursor: pointer;
-            display: none;
+        .comment-input {
+            width:100%;
+            padding:12px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-top:10px;
         }
 
-        /* スマホ向け最適化 */
-        @media (max-width: 480px) {
-            .post-card {
-                padding: 16px;
-            }
+        .btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+            margin-top:10px;
+        }
 
-            .likeBtn {
-                font-size: 1.2rem;
-            }
-
-            #deleteBtn {
-                font-size: 1rem;
-            }
+        /* レスポンシブ文字サイズ */
+        @media (max-width:480px) {
+            .title { font-size:20px; }
+            .desc { font-size:15px; }
+            .file { font-size:15px; }
         }
     </style>
 </head>
 <body>
 
-<div class="post-card">
-    <h2 id="title">読み込み中...</h2>
-    <div class="meta" id="meta"></div>
-    <img id="image" style="display:none;">
-    <p id="description"></p>
-
-    <span id="likeBtn" class="likeBtn">❤️ 0</span>
-
-    <div class="comment-box">
-        <h3>コメント</h3>
-        <div id="commentList"></div>
-
-        <textarea id="commentInput" rows="3" style="width:100%; margin-top:10px;" placeholder="コメントを書く…"></textarea>
-        <button id="commentBtn" style="margin-top:10px; width:100%; padding:10px; background:#2E7D32; color:white; border:none; border-radius:8px; font-size:1rem;">
-            コメントする
-        </button>
+<!-- ナビバー -->
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
     </div>
 
-    <button id="deleteBtn">🗑 この投稿を削除する</button>
+    <div>
+        <a href="home.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="post-card">
+
+        <!-- 画像スライド -->
+        <div class="slider" id="slider" style="display:none;">
+            <div class="slides" id="slides"></div>
+            <div class="dots" id="dots"></div>
+        </div>
+
+        <div class="title" id="title"></div>
+        <div class="desc" id="desc"></div>
+
+        <h3>📎 添付ファイル</h3>
+        <div id="files"></div>
+
+        <p style="margin-top:15px; font-size:14px; color:#555;">
+            投稿者：<span id="author"></span><br>
+            投稿日時：<span id="date"></span>
+        </p>
+
+        <h3>💬 コメント</h3>
+        <div id="comments"></div>
+
+        <textarea id="commentInput" class="comment-input" placeholder="コメントを書く…"></textarea>
+        <button class="btn" id="sendComment">コメントを送信</button>
+
+    </div>
 </div>
 
 <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script>
-// 🔥 GitHub に公開しても安全なダミー設定
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -136,163 +211,96 @@ const firebaseConfig = {
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-const auth = firebase.auth();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
+// ログインチェック
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
+
+// 投稿ID取得
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
-let currentUser = null;
-let postOwnerId = null;
-let postImages = [];
+// 投稿データ読み込み
+const postRef = doc(db, "posts", postId);
+const postSnap = await getDoc(postRef);
 
-// 🔥 ログインチェック
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
+if (postSnap.exists()) {
+    const post = postSnap.data();
+
+    document.getElementById("title").textContent = post.title;
+    document.getElementById("desc").textContent = post.description;
+    document.getElementById("date").textContent = new Date(post.createdAt).toLocaleString();
+
+    // 投稿者名（プロフィールから取得）
+    const userRef = doc(db, "users", post.createdBy);
+    const userSnap = await getDoc(userRef);
+    document.getElementById("author").textContent = userSnap.exists() ? userSnap.data().name : post.createdBy;
+
+    // 画像スライド
+    if (post.images && post.images.length > 0) {
+        const slider = document.getElementById("slider");
+        const slides = document.getElementById("slides");
+        const dots = document.getElementById("dots");
+
+        slider.style.display = "block";
+
+        post.images.forEach((url, i) => {
+            const img = document.createElement("img");
+            img.src = url;
+            slides.appendChild(img);
+
+            const dot = document.createElement("span");
+            dot.className = "dot" + (i === 0 ? " active" : "");
+            dots.appendChild(dot);
+        });
     }
-    currentUser = user;
+
+    // ファイル一覧
+    const filesDiv = document.getElementById("files");
+    if (post.files) {
+        post.files.forEach(url => {
+            const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
+            filesDiv.innerHTML += `
+                <div class="file">📄 <a href="${url}" target="_blank">${fileName}</a></div>
+            `;
+        });
+    }
+}
+
+// コメント読み込み
+const commentsRef = collection(db, "posts", postId, "comments");
+const q = query(commentsRef, orderBy("createdAt", "asc"));
+
+onSnapshot(q, (snapshot) => {
+    const commentsDiv = document.getElementById("comments");
+    commentsDiv.innerHTML = "";
+
+    snapshot.forEach((docSnap) => {
+        const c = docSnap.data();
+        commentsDiv.innerHTML += `
+            <div class="comment">
+                <div class="comment-user">${c.user}</div>
+                <div>${c.text}</div>
+            </div>
+        `;
+    });
 });
 
-// 🔥 通知送信
-async function sendNotification(toUserId, type, postId) {
-    await db.collection("notifications").add({
-        userId: toUserId,
-        type: type,
-        postId: postId,
-        fromUserId: currentUser.uid,
-        fromUserName: currentUser.email,
-        createdAt: new Date()
-    });
-}
-
-// 🔥 いいね処理
-async function toggleLike() {
-    const ref = db.collection("posts").doc(postId);
-    const snap = await ref.get();
-    const post = snap.data();
-
-    let likes = post.likes || [];
-
-    if (likes.includes(currentUser.uid)) {
-        likes = likes.filter(id => id !== currentUser.uid);
-    } else {
-        likes.push(currentUser.uid);
-        if (postOwnerId !== currentUser.uid) {
-            sendNotification(postOwnerId, "like", postId);
-        }
-    }
-
-    await ref.update({ likes });
-}
-
-// 🔥 コメント送信
-async function sendComment() {
+// コメント送信
+document.getElementById("sendComment").addEventListener("click", async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
 
-    await db.collection("posts").doc(postId).collection("comments").add({
-        userId: currentUser.uid,
-        userName: currentUser.email,
-        text: text,
-        createdAt: new Date()
+    await addDoc(commentsRef, {
+        text,
+        user: currentUser,
+        createdAt: Date.now()
     });
 
-    if (postOwnerId !== currentUser.uid) {
-        sendNotification(postOwnerId, "comment", postId);
-    }
-
     document.getElementById("commentInput").value = "";
-}
-
-// 🔥 コメント読み込み
-function loadComments() {
-    db.collection("posts").doc(postId)
-      .collection("comments")
-      .orderBy("createdAt", "asc")
-      .onSnapshot(snapshot => {
-          const list = document.getElementById("commentList");
-          list.innerHTML = "";
-
-          snapshot.forEach(doc => {
-              const c = doc.data();
-              const div = document.createElement("div");
-              div.className = "comment";
-              div.innerHTML = `
-                  <div class="comment-user">${c.userName}</div>
-                  <div>${c.text}</div>
-              `;
-              list.appendChild(div);
-          });
-      });
-}
-
-// 🔥 投稿削除
-async function deletePost() {
-    if (!confirm("本当に削除しますか？")) return;
-
-    const ref = db.collection("posts").doc(postId);
-
-    for (let url of postImages) {
-        try {
-            const imgRef = storage.refFromURL(url);
-            await imgRef.delete();
-        } catch (e) {
-            console.log("画像削除失敗:", e);
-        }
-    }
-
-    const comments = await ref.collection("comments").get();
-    const batch = db.batch();
-    comments.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-
-    await ref.delete();
-
-    alert("投稿を削除しました");
-    location.href = "index.html";
-}
-
-// 🔥 投稿読み込み
-db.collection("posts").doc(postId).onSnapshot(doc => {
-    if (!doc.exists) {
-        document.getElementById("title").innerText = "投稿が見つかりません";
-        return;
-    }
-
-    const post = doc.data();
-    postOwnerId = post.userId;
-    postImages = post.images || [];
-
-    document.getElementById("title").innerText = post.title;
-    document.getElementById("description").innerText = post.description;
-
-    const date = post.createdAt?.toDate ? post.createdAt.toDate() : new Date();
-    document.getElementById("meta").innerText =
-        `${post.userName} さん・${date.toLocaleString()}`;
-
-    if (post.images && post.images.length > 0) {
-        const img = document.getElementById("image");
-        img.src = post.images[0];
-        img.style.display = "block";
-    }
-
-    const likes = post.likes || [];
-    document.getElementById("likeBtn").innerText = `❤️ ${likes.length}`;
-
-    if (postOwnerId === currentUser.uid) {
-        document.getElementById("deleteBtn").style.display = "block";
-    }
 });
-
-document.getElementById("likeBtn").addEventListener("click", toggleLike);
-document.getElementById("commentBtn").addEventListener("click", sendComment);
-document.getElementById("deleteBtn").addEventListener("click", deletePost);
-
-loadComments();
 </script>
 
 </body>

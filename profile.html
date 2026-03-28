@@ -2,98 +2,131 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScoutNet プロフィール</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScoutNet - プロフィール</title>
 
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 40px;
-            text-align: center;
-            color: #4E342E;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
         }
 
-        .box {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            border: 2px solid #D7C4A3;
-            width: 85%;
-            max-width: 500px;
-            margin: 30px auto;
-            box-shadow: 0 4px 0 #D7C4A3;
-            text-align: left;
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:white;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            margin-left:15px;
+        }
+
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
+        }
+
+        .card {
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:20px;
+            box-shadow:0 4px 0 #D7C4A3;
         }
 
         .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: #ddd;
-            display: block;
-            margin: 0 auto 10px;
+            width:130px;
+            height:130px;
+            border-radius:50%;
+            object-fit:cover;
+            background:#ddd;
+            display:block;
+            margin:0 auto 15px;
         }
 
         input, textarea {
-            width: 95%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #D7C4A3;
+            width:100%;
+            padding:12px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-bottom:15px;
+            font-size:16px;
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 3px 0 #1B5E20;
-            cursor: pointer;
+        .btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+            margin-top:10px;
+        }
+
+        @media (max-width:480px) {
+            input, textarea { font-size:15px; }
         }
     </style>
 </head>
 <body>
 
-<h2>ScoutNet プロフィール</h2>
+<!-- ナビバー -->
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
 
-<div class="box">
-    <h3>ユーザー情報</h3>
+    <div>
+        <a href="home.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
 
-    <img id="profile-img" class="profile-img" src="" alt="プロフィール画像">
-    <input type="file" id="img-input" accept="image/*">
+<div class="container">
+    <div class="card">
 
-    <label>名前</label>
-    <input type="text" id="name-input">
+        <h2>プロフィール編集</h2>
 
-    <label>自己紹介</label>
-    <textarea id="bio-input" rows="4"></textarea>
+        <img id="profileImg" class="profile-img" src="">
 
-    <button id="saveBtn">保存する</button>
+        <input type="file" id="imgInput" accept="image/*">
 
-    <!-- フォローボタン（他人のプロフィール時のみ表示） -->
-    <button id="followBtn" style="display:none; margin-top:10px;">
-        フォローする
-    </button>
+        <label>名前</label>
+        <input type="text" id="nameInput">
+
+        <label>自己紹介</label>
+        <textarea id="bioInput" rows="4"></textarea>
+
+        <button class="btn" id="saveBtn">保存する</button>
+
+    </div>
 </div>
 
 <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-<script>
-// 🔥 GitHub に公開しても安全なダミー設定
-// 本物のキーはローカルだけに置くこと
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
+    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.firebasestorage.app",
@@ -101,119 +134,36 @@ const firebaseConfig = {
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-const auth = firebase.auth();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-let currentUser = null;
-let viewUserId = null;
-let isMyProfile = false;
+// ログインチェック
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
+
+const userRef = doc(db, "users", currentUser);
+
+// 初期読み込み
+const profileImg = document.getElementById("profileImg");
+const nameInput = document.getElementById("nameInput");
+const bioInput = document.getElementById("bioInput");
+const imgInput = document.getElementById("imgInput");
+
 let selectedImageFile = null;
 
-const profileImg = document.getElementById("profile-img");
-const imgInput = document.getElementById("img-input");
-const nameInput = document.getElementById("name-input");
-const bioInput = document.getElementById("bio-input");
-const saveBtn = document.getElementById("saveBtn");
-const followBtn = document.getElementById("followBtn");
-
-// 🔥 ログインチェック & プロフィール対象決定
-auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        location.href = "login.html";
-        return;
+(async () => {
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+        const data = snap.data();
+        profileImg.src = data.icon || "";
+        nameInput.value = data.name || "";
+        bioInput.value = data.bio || "";
     }
-    currentUser = user;
+})();
 
-    const params = new URLSearchParams(location.search);
-    viewUserId = params.get("id") || currentUser.uid;
-    isMyProfile = (viewUserId === currentUser.uid);
-
-    const viewUserRef = db.collection("users").doc(viewUserId);
-    const myRef = db.collection("users").doc(currentUser.uid);
-
-    // 🔥 プロフィール読み込み
-    viewUserRef.get().then(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.iconUrl) profileImg.src = data.iconUrl;
-            nameInput.value = data.name || "";
-            bioInput.value = data.bio || "";
-        } else {
-            if (isMyProfile) {
-                myRef.set({
-                    name: currentUser.email,
-                    bio: "",
-                    iconUrl: "",
-                    following: [],
-                    followers: []
-                }, { merge: true });
-                nameInput.value = currentUser.email;
-            }
-        }
-    });
-
-    // 🔥 自分のプロフィールかどうかで UI 切り替え
-    if (!isMyProfile) {
-        saveBtn.style.display = "none";
-        imgInput.style.display = "none";
-        nameInput.disabled = true;
-        bioInput.disabled = true;
-
-        followBtn.style.display = "block";
-
-        viewUserRef.onSnapshot(doc => {
-            const data = doc.data() || {};
-            const followers = data.followers || [];
-            followBtn.textContent =
-                followers.includes(currentUser.uid) ? "フォロー解除" : "フォローする";
-        });
-
-        followBtn.addEventListener("click", async () => {
-            const userDoc = await viewUserRef.get();
-            const userData = userDoc.data() || {};
-            let followers = userData.followers || [];
-
-            const myDoc = await myRef.get();
-            const myData = myDoc.data() || {};
-            let following = myData.following || [];
-
-            if (followers.includes(currentUser.uid)) {
-                followers = followers.filter(id => id !== currentUser.uid);
-                following = following.filter(id => id !== viewUserId);
-            } else {
-                followers.push(currentUser.uid);
-                following.push(viewUserId);
-                await sendNotification(viewUserId, "follow", null);
-            }
-
-            await viewUserRef.update({ followers });
-            await myRef.set({ following }, { merge: true });
-        });
-    }
-
-    // 🔥 保存ボタン
-    saveBtn.addEventListener("click", async () => {
-        const name = nameInput.value.trim();
-        const bio = bioInput.value.trim();
-
-        let iconUrl = profileImg.src || "";
-
-        if (selectedImageFile) {
-            const ref = storage.ref("icons/" + currentUser.uid + ".jpg");
-            await ref.put(selectedImageFile);
-            iconUrl = await ref.getDownloadURL();
-        }
-
-        await myRef.set({ name, bio, iconUrl }, { merge: true });
-
-        alert("プロフィールを保存しました！");
-    });
-});
-
-// 🔥 画像選択 → プレビュー
-imgInput.addEventListener("change", (e) => {
+// アイコン選択 → プレビュー
+imgInput.addEventListener("change", e => {
     selectedImageFile = e.target.files[0];
     if (!selectedImageFile) return;
 
@@ -224,17 +174,28 @@ imgInput.addEventListener("change", (e) => {
     reader.readAsDataURL(selectedImageFile);
 });
 
-// 🔥 通知送信
-async function sendNotification(toUserId, type, postId) {
-    await db.collection("notifications").add({
-        userId: toUserId,
-        type,
-        postId,
-        fromUserId: currentUser.uid,
-        fromUserName: currentUser.email,
-        createdAt: new Date()
-    });
-}
+// 保存処理
+document.getElementById("saveBtn").addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    const bio = bioInput.value.trim();
+
+    let iconUrl = profileImg.src;
+
+    // アイコンアップロード
+    if (selectedImageFile) {
+        const iconRef = ref(storage, `icons/${currentUser}.jpg`);
+        await uploadBytes(iconRef, selectedImageFile);
+        iconUrl = await getDownloadURL(iconRef);
+    }
+
+    await setDoc(userRef, {
+        name,
+        bio,
+        icon: iconUrl
+    }, { merge: true });
+
+    alert("プロフィールを保存しました！");
+});
 </script>
 
 </body>

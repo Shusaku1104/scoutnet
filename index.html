@@ -2,34 +2,22 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScoutNet - 認証チェック</title>
+    <title>ScoutNet</title>
 </head>
 <body>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-
 <script>
-const firebaseConfig = {
-    apiKey: "YOUR_REAL_API_KEY",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
-};
+// ログイン状態チェック
+const user = localStorage.getItem("currentUser");
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-    } else {
-        location.href = "home.html";
-    }
-});
+// ログインしてる → ホームへ
+if (user) {
+    location.href = "home.html";
+} 
+// ログインしてない → ログインページへ
+else {
+    location.href = "login.html";
+}
 </script>
 
 </body>
