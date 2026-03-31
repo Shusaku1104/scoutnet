@@ -65,6 +65,28 @@
         .value {
             margin-bottom:10px;
         }
+
+        /* 投稿カード */
+        .post-card {
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:16px;
+            margin-bottom:15px;
+            box-shadow:0 4px 0 #D7C4A3;
+            cursor:pointer;
+        }
+
+        .post-title {
+            font-size:18px;
+            font-weight:700;
+            margin-bottom:6px;
+        }
+
+        .post-desc {
+            font-size:14px;
+            color:#555;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +123,9 @@
 
         <div class="label">いいねした投稿</div>
         <div class="value" id="likeCount"></div>
+
+        <h3 style="margin-top:25px;">📚 このユーザーの投稿一覧</h3>
+        <div id="userPosts"></div>
 
     </div>
 </div>
@@ -148,6 +173,21 @@ if (userSnap.exists()) {
     const likesQ = query(collection(db, "likes"), where("user", "==", userId));
     const likesSnap = await getDocs(likesQ);
     document.getElementById("likeCount").textContent = likesSnap.size;
+
+    // 投稿一覧
+    const postsDiv = document.getElementById("userPosts");
+    postsDiv.innerHTML = "";
+
+    postsSnap.forEach((docSnap) => {
+        const p = docSnap.data();
+
+        postsDiv.innerHTML += `
+            <div class="post-card" onclick="location.href='post.html?id=${docSnap.id}'">
+                <div class="post-title">${p.title}</div>
+                <div class="post-desc">${p.description}</div>
+            </div>
+        `;
+    });
 }
 </script>
 
