@@ -47,42 +47,6 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
-        .slider {
-            position:relative;
-            width:100%;
-            overflow:hidden;
-            border-radius:12px;
-            margin-bottom:15px;
-        }
-
-        .slides {
-            display:flex;
-            transition:0.4s;
-        }
-
-        .slides img {
-            width:100%;
-            border-radius:12px;
-        }
-
-        .dots {
-            text-align:center;
-            margin-top:8px;
-        }
-
-        .dot {
-            height:10px;
-            width:10px;
-            margin:0 4px;
-            background:#D7C4A3;
-            border-radius:50%;
-            display:inline-block;
-        }
-
-        .dot.active {
-            background:#2E7D32;
-        }
-
         .title {
             font-size:22px;
             font-weight:700;
@@ -103,6 +67,32 @@
             color:#2E7D32;
             text-decoration:none;
             font-weight:600;
+        }
+
+        .like-btn {
+            font-size:22px;
+            cursor:pointer;
+            user-select:none;
+            margin-top:10px;
+        }
+
+        .like-count {
+            font-size:15px;
+            margin-left:8px;
+            color:#555;
+        }
+
+        .delete-btn {
+            background:#c62828;
+            color:white;
+            padding:10px;
+            border:none;
+            border-radius:10px;
+            width:100%;
+            margin-top:15px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #8e0000;
         }
 
         .comment {
@@ -138,12 +128,6 @@
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
         }
-
-        @media (max-width:480px) {
-            .title { font-size:20px; }
-            .desc { font-size:15px; }
-            .file { font-size:15px; }
-        }
     </style>
 </head>
 <body>
@@ -164,11 +148,6 @@
 <div class="container">
     <div class="post-card">
 
-        <div class="slider" id="slider" style="display:none;">
-            <div class="slides" id="slides"></div>
-            <div class="dots" id="dots"></div>
-        </div>
-
         <div class="title" id="title"></div>
         <div class="desc" id="desc"></div>
 
@@ -179,6 +158,15 @@
             投稿者：<span id="author"></span><br>
             投稿日時：<span id="date"></span>
         </p>
+
+        <!-- ❤️ いいね -->
+        <div>
+            <span id="likeBtn" class="like-btn">🤍</span>
+            <span id="likeCount" class="like-count">0件</span>
+        </div>
+
+        <!-- 削除ボタン（投稿者のみ表示） -->
+        <button id="deleteBtn" class="delete-btn" style="display:none;">投稿を削除する</button>
 
         <h3>💬 コメント</h3>
         <div id="comments"></div>
@@ -191,7 +179,12 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getStorage, ref, deleteObject 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
@@ -204,6 +197,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
@@ -212,10 +206,12 @@ const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
 const postRef = doc(db, "posts", postId);
-const postSnap = await getDoc(postRef);
+const likeRef = doc(db, "posts", postId, "likes", currentUser);
 
 let postData = null;
 
+// 投稿読み込み
+const postSnap = await getDoc(postRef);
 if (postSnap.exists()) {
     const post = postSnap.data();
     postData = post;
@@ -224,28 +220,12 @@ if (postSnap.exists()) {
     document.getElementById("desc").textContent = post.description;
     document.getElementById("date").textContent = new Date(post.createdAt).toLocaleString();
 
+    // 投稿者名
     const userRef = doc(db, "users", post.createdBy);
     const userSnap = await getDoc(userRef);
     document.getElementById("author").textContent = userSnap.exists() ? userSnap.data().name : post.createdBy;
 
-    if (post.images && post.images.length > 0) {
-        const slider = document.getElementById("slider");
-        const slides = document.getElementById("slides");
-        const dots = document.getElementById("dots");
-
-        slider.style.display = "block";
-
-        post.images.forEach((url, i) => {
-            const img = document.createElement("img");
-            img.src = url;
-            slides.appendChild(img);
-
-            const dot = document.createElement("span");
-            dot.className = "dot" + (i === 0 ? " active" : "");
-            dots.appendChild(dot);
-        });
-    }
-
+    // ファイル
     const filesDiv = document.getElementById("files");
     if (post.files) {
         post.files.forEach(url => {
@@ -255,9 +235,56 @@ if (postSnap.exists()) {
             `;
         });
     }
+
+    // 投稿者なら削除ボタン表示
+    if (post.createdBy === currentUser) {
+        document.getElementById("deleteBtn").style.display = "block";
+    }
 }
 
-// コメント読み込み
+// ❤️ いいね状態チェック
+onSnapshot(likeRef, (snap) => {
+    const likeBtn = document.getElementById("likeBtn");
+    if (snap.exists()) {
+        likeBtn.textContent = "❤️";
+    } else {
+        likeBtn.textContent = "🤍";
+    }
+});
+
+// ❤️ いいね数
+onSnapshot(collection(db, "posts", postId, "likes"), (snapshot) => {
+    document.getElementById("likeCount").textContent = snapshot.size + "件";
+});
+
+// ❤️ いいね押したとき
+document.getElementById("likeBtn").addEventListener("click", async () => {
+    const snap = await getDoc(likeRef);
+
+    if (snap.exists()) {
+        // いいね解除
+        await deleteDoc(likeRef);
+    } else {
+        // いいね追加
+        await setDoc(likeRef, {
+            user: currentUser,
+            createdAt: Date.now()
+        });
+
+        // 通知（投稿者 ≠ 自分）
+        if (postData.createdBy !== currentUser) {
+            await addDoc(collection(db, "notifications"), {
+                to: postData.createdBy,
+                from: currentUser,
+                type: "like",
+                postId,
+                createdAt: Date.now()
+            });
+        }
+    }
+});
+
+// 💬 コメント読み込み
 const commentsRef = collection(db, "posts", postId, "comments");
 const q = query(commentsRef, orderBy("createdAt", "asc"));
 
@@ -276,7 +303,7 @@ onSnapshot(q, (snapshot) => {
     });
 });
 
-// コメント送信＋通知
+// 💬 コメント送信
 document.getElementById("sendComment").addEventListener("click", async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
@@ -289,8 +316,8 @@ document.getElementById("sendComment").addEventListener("click", async () => {
 
     document.getElementById("commentInput").value = "";
 
-    // 投稿者に通知（自分の投稿に自分でコメントした場合はスキップしてもいい）
-    if (postData && postData.createdBy && postData.createdBy !== currentUser) {
+    // 通知
+    if (postData.createdBy !== currentUser) {
         await addDoc(collection(db, "notifications"), {
             to: postData.createdBy,
             from: currentUser,
@@ -299,6 +326,33 @@ document.getElementById("sendComment").addEventListener("click", async () => {
             createdAt: Date.now()
         });
     }
+});
+
+// 🗑 投稿削除
+document.getElementById("deleteBtn").addEventListener("click", async () => {
+    if (!confirm("本当に削除しますか？")) return;
+
+    // 画像削除
+    if (postData.images) {
+        for (let url of postData.images) {
+            const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+            await deleteObject(ref(storage, path));
+        }
+    }
+
+    // ファイル削除
+    if (postData.files) {
+        for (let url of postData.files) {
+            const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+            await deleteObject(ref(storage, path));
+        }
+    }
+
+    // 投稿削除
+    await deleteDoc(postRef);
+
+    alert("投稿を削除しました");
+    location.href = "home.html";
 });
 </script>
 
