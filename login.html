@@ -67,7 +67,7 @@
 <div class="container">
     <h2>ScoutNet ログイン</h2>
 
-    <input type="email" id="email" placeholder="メールアドレス">
+    <input type="text" id="userId" placeholder="ログインID">
     <input type="password" id="password" placeholder="パスワード">
 
     <button class="btn" id="loginBtn">ログイン</button>
@@ -79,9 +79,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getAuth, signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
@@ -93,30 +91,35 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const db = getFirestore(app);
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    const id = document.getElementById("userId").value.trim();
+    const pw = document.getElementById("password").value.trim();
 
-    if (!email || !password) {
-        alert("メールアドレスとパスワードを入力してください");
+    if (!id || !pw) {
+        alert("ログインIDとパスワードを入力してください");
         return;
     }
 
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+    const ref = doc(db, "users", id);
+    const snap = await getDoc(ref);
 
-        // ログイン成功 → user.uid を保存
-        localStorage.setItem("currentUser", user.uid);
-
-        alert("ログインしました！");
-        location.href = "home.html";
-
-    } catch (error) {
-        alert("ログインに失敗しました：" + error.message);
+    if (!snap.exists()) {
+        alert("このログインIDは存在しません");
+        return;
     }
+
+    const data = snap.data();
+
+    if (data.password !== pw) {
+        alert("パスワードが違います");
+        return;
+    }
+
+    // ログイン成功
+    localStorage.setItem("currentUser", id);
+    location.href = "home.html";
 });
 </script>
 
