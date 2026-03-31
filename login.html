@@ -13,7 +13,6 @@
             padding:0;
             color:#4E342E;
         }
-
         .container {
             max-width:400px;
             margin:60px auto;
@@ -23,12 +22,10 @@
             border:2px solid #D7C4A3;
             box-shadow:0 4px 0 #D7C4A3;
         }
-
         h2 {
             text-align:center;
             margin-bottom:20px;
         }
-
         input {
             width:100%;
             padding:12px;
@@ -36,7 +33,6 @@
             border:1px solid #D7C4A3;
             border-radius:10px;
         }
-
         .btn {
             width:100%;
             padding:14px;
@@ -49,12 +45,10 @@
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
         }
-
         .link {
             text-align:center;
             margin-top:15px;
         }
-
         .link a {
             color:#2E7D32;
             text-decoration:none;
@@ -72,11 +66,8 @@
 
     <button class="btn" id="loginBtn">ログイン</button>
 
-    <!-- About ボタン -->
-    <button class="btn" onclick="location.href='about.html'">About</button>
-
     <div class="link">
-        <a href="signup.html">アカウントを作成する</a>
+        <a href="signup.html">新規登録はこちら</a>
     </div>
 </div>
 
@@ -85,12 +76,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAy1dzUvC_dWtnEOsPZ-L3rPkbhPwiwaOU",
-    authDomain: "scoutnet2-80838.firebaseapp.com",
-    projectId: "scoutnet2-80838",
-    storageBucket: "scoutnet2-80838.firebasestorage.app",
-    messagingSenderId: "847374706005",
-    appId: "1:847374706005:web:6a0415a2a8b13ee76efbdc"
+  apiKey: "AIzaSyAy1dzUvC_dWtnEOsPZ-L3rPkbhPwiwaOU",
+  authDomain: "scoutnet2-80838.firebaseapp.com",
+  projectId: "scoutnet2-80838",
+  storageBucket: "scoutnet2-80838.appspot.com",
+  messagingSenderId: "847374706005",
+  appId: "1:847374706005:web:6a0415a2a8b13ee76efbdc"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -109,7 +100,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const snap = await getDoc(ref);
 
     if (!snap.exists()) {
-        alert("このログインIDは存在しません");
+        alert("このログインIDは登録されていません");
         return;
     }
 
@@ -120,8 +111,8 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
         return;
     }
 
-    // ログイン成功
     localStorage.setItem("currentUser", id);
+    alert("ログイン成功！");
     location.href = "home.html";
 });
 </script>
