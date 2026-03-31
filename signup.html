@@ -107,7 +107,7 @@
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    storageBucket: "scoutnet-3ccb1.appspot.com",  // ← 修正済み
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
   };
@@ -148,12 +148,16 @@
         return;
     }
 
+    // 新規登録データ
     await setDoc(ref, {
       password: pw,
+      name: id,     // 初期表示名
+      bio: "",      // 自己紹介
+      icon: "",     // アイコン
       createdAt: Date.now()
     });
 
-    // ★ 新規登録＝ログイン扱い（周作仕様）
+    // 自動ログイン
     localStorage.setItem("currentUser", id);
 
     location.href = "home.html";
