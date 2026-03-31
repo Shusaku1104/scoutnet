@@ -47,6 +47,38 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
+        /* 画像スライダー */
+        .slider {
+            position: relative;
+            width: 100%;
+            height: 260px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #ddd;
+        }
+
+        .slide-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.7);
+            border: none;
+            padding: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        #prevBtn { left: 10px; }
+        #nextBtn { right: 10px; }
+
         .title {
             font-size:22px;
             font-weight:700;
@@ -148,6 +180,13 @@
 <div class="container">
     <div class="post-card">
 
+        <!-- 画像スライダー -->
+        <div class="slider">
+            <button class="slide-btn" id="prevBtn">←</button>
+            <img id="slideImage" class="slide-img">
+            <button class="slide-btn" id="nextBtn">→</button>
+        </div>
+
         <div class="title" id="title"></div>
         <div class="desc" id="desc"></div>
 
@@ -165,7 +204,7 @@
             <span id="likeCount" class="like-count">0件</span>
         </div>
 
-        <!-- 削除ボタン（投稿者のみ表示） -->
+        <!-- 削除ボタン -->
         <button id="deleteBtn" class="delete-btn" style="display:none;">投稿を削除する</button>
 
         <h3>💬 コメント</h3>
@@ -179,11 +218,11 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, deleteDoc 
+import {
+    getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { 
-    getStorage, ref, deleteObject 
+import {
+    getStorage, ref, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
@@ -223,7 +262,8 @@ if (postSnap.exists()) {
     // 投稿者名
     const userRef = doc(db, "users", post.createdBy);
     const userSnap = await getDoc(userRef);
-    document.getElementById("author").textContent = userSnap.exists() ? userSnap.data().name : post.createdBy;
+    document.getElementById("author").textContent =
+        userSnap.exists() ? userSnap.data().name : post.createdBy;
 
     // ファイル
     const filesDiv = document.getElementById("files");
@@ -240,16 +280,39 @@ if (postSnap.exists()) {
     if (post.createdBy === currentUser) {
         document.getElementById("deleteBtn").style.display = "block";
     }
+
+    // 画像スライダー
+    const slideImage = document.getElementById("slideImage");
+    let images = post.images || [];
+    let currentIndex = 0;
+
+    function updateSlide() {
+        if (images.length > 0) {
+            slideImage.src = images[currentIndex];
+        } else {
+            slideImage.style.display = "none";
+        }
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        updateSlide();
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex + 1) % images.length;
+        updateSlide();
+    });
+
+    updateSlide();
 }
 
 // ❤️ いいね状態チェック
 onSnapshot(likeRef, (snap) => {
     const likeBtn = document.getElementById("likeBtn");
-    if (snap.exists()) {
-        likeBtn.textContent = "❤️";
-    } else {
-        likeBtn.textContent = "🤍";
-    }
+    likeBtn.textContent = snap.exists() ? "❤️" : "🤍";
 });
 
 // ❤️ いいね数
@@ -262,16 +325,13 @@ document.getElementById("likeBtn").addEventListener("click", async () => {
     const snap = await getDoc(likeRef);
 
     if (snap.exists()) {
-        // いいね解除
         await deleteDoc(likeRef);
     } else {
-        // いいね追加
         await setDoc(likeRef, {
             user: currentUser,
             createdAt: Date.now()
         });
 
-        // 通知（投稿者 ≠ 自分）
         if (postData.createdBy !== currentUser) {
             await addDoc(collection(db, "notifications"), {
                 to: postData.createdBy,
@@ -316,7 +376,6 @@ document.getElementById("sendComment").addEventListener("click", async () => {
 
     document.getElementById("commentInput").value = "";
 
-    // 通知
     if (postData.createdBy !== currentUser) {
         await addDoc(collection(db, "notifications"), {
             to: postData.createdBy,
@@ -332,7 +391,6 @@ document.getElementById("sendComment").addEventListener("click", async () => {
 document.getElementById("deleteBtn").addEventListener("click", async () => {
     if (!confirm("本当に削除しますか？")) return;
 
-    // 画像削除
     if (postData.images) {
         for (let url of postData.images) {
             const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
@@ -340,7 +398,6 @@ document.getElementById("deleteBtn").addEventListener("click", async () => {
         }
     }
 
-    // ファイル削除
     if (postData.files) {
         for (let url of postData.files) {
             const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
@@ -348,7 +405,6 @@ document.getElementById("deleteBtn").addEventListener("click", async () => {
         }
     }
 
-    // 投稿削除
     await deleteDoc(postRef);
 
     alert("投稿を削除しました");
