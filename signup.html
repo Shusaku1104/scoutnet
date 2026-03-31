@@ -91,7 +91,7 @@
 
     <div class="terms">
         アカウントを作成することで、<br>
-        <a href="rules.html">利用規約</a> に同意したものとみなします。
+        <a href="rule.html">利用規約</a> に同意したものとみなします。
     </div>
 
     <button class="btn" id="signupBtn">登録する</button>
@@ -107,7 +107,7 @@
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",  // ← 修正済み
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
   };
@@ -148,16 +148,14 @@
         return;
     }
 
-    // 新規登録データ
     await setDoc(ref, {
       password: pw,
-      name: id,     // 初期表示名
-      bio: "",      // 自己紹介
-      icon: "",     // アイコン
+      name: id,
+      bio: "",
+      icon: "",
       createdAt: Date.now()
     });
 
-    // 自動ログイン
     localStorage.setItem("currentUser", id);
 
     location.href = "home.html";
