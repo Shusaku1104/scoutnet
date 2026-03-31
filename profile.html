@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ScoutNet - プロフィール</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
         body {
@@ -39,7 +39,7 @@
             padding:0 15px;
         }
 
-        .card {
+        .profile-card {
             background:white;
             border:2px solid #D7C4A3;
             border-radius:16px;
@@ -47,23 +47,31 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
-        .profile-img {
-            width:130px;
-            height:130px;
+        .icon {
+            width:120px;
+            height:120px;
             border-radius:50%;
             object-fit:cover;
-            background:#ddd;
             display:block;
             margin:0 auto 15px;
+            background:#ddd;
         }
 
-        input, textarea {
+        .label {
+            font-weight:700;
+            margin-top:10px;
+        }
+
+        .value {
+            margin-bottom:10px;
+        }
+
+        .edit-input {
             width:100%;
-            padding:12px;
+            padding:10px;
             border:1px solid #D7C4A3;
             border-radius:10px;
-            margin-bottom:15px;
-            font-size:16px;
+            margin-bottom:10px;
         }
 
         .btn {
@@ -78,6 +86,11 @@
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
         }
+
+        .cancel-btn {
+            background:#888;
+            box-shadow:0 3px 0 #555;
+        }
     </style>
 </head>
 <body>
@@ -90,40 +103,72 @@
     <div>
         <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
 <div class="container">
-    <div class="card">
+    <div class="profile-card">
 
-        <h2>プロフィール編集</h2>
+        <!-- プロフィール画像 -->
+        <img id="icon" class="icon">
 
-        <img id="profileImg" class="profile-img" src="">
+        <!-- 編集モード用 -->
+        <input type="file" id="iconInput" style="display:none;">
 
-        <input type="file" id="imgInput" accept="image/*">
+        <div id="profileView">
+            <div class="label">名前</div>
+            <div class="value" id="name"></div>
 
-        <label>名前</label>
-        <input type="text" id="nameInput">
+            <div class="label">メール</div>
+            <div class="value" id="email"></div>
 
-        <label>自己紹介</label>
-        <textarea id="bioInput" rows="4"></textarea>
+            <div class="label">所属</div>
+            <div class="value" id="team"></div>
 
-        <button class="btn" id="saveBtn">保存する</button>
+            <div class="label">自己紹介</div>
+            <div class="value" id="bio"></div>
+
+            <div class="label">投稿数</div>
+            <div class="value" id="postCount"></div>
+
+            <div class="label">いいねした投稿</div>
+            <div class="value" id="likeCount"></div>
+
+            <button class="btn" id="editBtn">編集する</button>
+        </div>
+
+        <!-- 編集モード -->
+        <div id="profileEdit" style="display:none;">
+            <button class="btn" onclick="document.getElementById('iconInput').click()">画像を変更</button>
+
+            <input id="editName" class="edit-input" placeholder="名前">
+            <input id="editPref" class="edit-input" placeholder="都道府県">
+            <input id="editTroop" class="edit-input" placeholder="団名">
+            <textarea id="editBio" class="edit-input" placeholder="自己紹介"></textarea>
+
+            <button class="btn" id="saveBtn">保存</button>
+            <button class="btn cancel-btn" id="cancelBtn">キャンセル</button>
+        </div>
 
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import {
+    getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+    getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",  // ← 修正済み
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
@@ -136,57 +181,74 @@ const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
 const userRef = doc(db, "users", currentUser);
+const userSnap = await getDoc(userRef);
 
-const profileImg = document.getElementById("profileImg");
-const nameInput = document.getElementById("nameInput");
-const bioInput = document.getElementById("bioInput");
-const imgInput = document.getElementById("imgInput");
+let userData = userSnap.data();
 
-let selectedImageFile = null;
+// デフォルトアイコン
+const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
 
-// 初期読み込み
-(async () => {
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-        const data = snap.data();
-        profileImg.src = data.icon || "";
-        nameInput.value = data.name || "";
-        bioInput.value = data.bio || "";
-    }
-})();
+// 表示モードに反映
+document.getElementById("icon").src = userData.iconURL || defaultIcon;
+document.getElementById("name").textContent = userData.name;
+document.getElementById("email").textContent = userData.email;
+document.getElementById("team").textContent = `${userData.prefecture} ${userData.troop}`;
+document.getElementById("bio").textContent = userData.bio || "（未設定）";
 
-// アイコンプレビュー
-imgInput.addEventListener("change", e => {
-    selectedImageFile = e.target.files[0];
-    if (!selectedImageFile) return;
+// 投稿数
+const postsQ = query(collection(db, "posts"), where("createdBy", "==", currentUser));
+const postsSnap = await getDocs(postsQ);
+document.getElementById("postCount").textContent = postsSnap.size;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-        profileImg.src = reader.result;
-    };
-    reader.readAsDataURL(selectedImageFile);
+// いいね数
+const likesQ = query(collection(db, "likes"), where("user", "==", currentUser));
+const likesSnap = await getDocs(likesQ);
+document.getElementById("likeCount").textContent = likesSnap.size;
+
+// 編集ボタン
+document.getElementById("editBtn").addEventListener("click", () => {
+    document.getElementById("profileView").style.display = "none";
+    document.getElementById("profileEdit").style.display = "block";
+
+    document.getElementById("editName").value = userData.name;
+    document.getElementById("editPref").value = userData.prefecture;
+    document.getElementById("editTroop").value = userData.troop;
+    document.getElementById("editBio").value = userData.bio || "";
 });
 
-// 保存処理
+// キャンセル
+document.getElementById("cancelBtn").addEventListener("click", () => {
+    document.getElementById("profileView").style.display = "block";
+    document.getElementById("profileEdit").style.display = "none";
+});
+
+// 保存
 document.getElementById("saveBtn").addEventListener("click", async () => {
-    const name = nameInput.value.trim();
-    const bio = bioInput.value.trim();
+    const newName = document.getElementById("editName").value;
+    const newPref = document.getElementById("editPref").value;
+    const newTroop = document.getElementById("editTroop").value;
+    const newBio = document.getElementById("editBio").value;
 
-    let iconUrl = profileImg.src;
+    let newIconURL = userData.iconURL;
 
-    if (selectedImageFile) {
+    // アイコン変更
+    const file = document.getElementById("iconInput").files[0];
+    if (file) {
         const iconRef = ref(storage, `icons/${currentUser}.jpg`);
-        await uploadBytes(iconRef, selectedImageFile);
-        iconUrl = await getDownloadURL(iconRef);
+        await uploadBytes(iconRef, file);
+        newIconURL = await getDownloadURL(iconRef);
     }
 
-    await setDoc(userRef, {
-        name,
-        bio,
-        icon: iconUrl
-    }, { merge: true });
+    await updateDoc(userRef, {
+        name: newName,
+        prefecture: newPref,
+        troop: newTroop,
+        bio: newBio,
+        iconURL: newIconURL
+    });
 
-    alert("プロフィールを保存しました！");
+    alert("プロフィールを更新しました");
+    location.reload();
 });
 </script>
 
