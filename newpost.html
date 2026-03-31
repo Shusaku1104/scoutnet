@@ -47,7 +47,7 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
-        input, textarea {
+        input, textarea, select {
             width:100%;
             padding:12px;
             border:1px solid #D7C4A3;
@@ -103,6 +103,13 @@
         <input id="title" placeholder="タイトル">
 
         <textarea id="description" rows="5" placeholder="説明文"></textarea>
+
+        <h3>📌 カテゴリ</h3>
+        <select id="category">
+            <option value="アウトドア">アウトドア</option>
+            <option value="インドア">インドア</option>
+            <option value="奉仕">奉仕</option>
+        </select>
 
         <h3>📷 画像を選択（複数OK）</h3>
         <input type="file" id="images" accept="image/*" multiple>
@@ -165,6 +172,7 @@ document.getElementById("files").addEventListener("change", e => {
 document.getElementById("postBtn").addEventListener("click", async () => {
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
+    const category = document.getElementById("category").value;
 
     if (!title || !description) {
         alert("タイトルと説明文は必須です");
@@ -197,13 +205,14 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const postDoc = await addDoc(collection(db, "posts"), {
         title,
         description,
+        category,   // ← カテゴリ保存
         images: imageURLs,
         files: fileURLs,
         createdBy: currentUser,
         createdAt: Date.now()
     });
 
-    // 全ユーザーに「新規投稿」通知（雑に全員通知する例）
+    // 通知処理（今のままでOK）
     const usersSnap = await getDocs(collection(db, "users"));
     const notificationsRef = collection(db, "notifications");
 
@@ -212,7 +221,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const promises = [];
     usersSnap.forEach(u => {
         const uid = u.id;
-        if (uid === currentUser) return; // 自分には送らないならここでスキップ
+        if (uid === currentUser) return;
         promises.push(
             addDoc(notificationsRef, {
                 to: uid,
