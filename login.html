@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>ScoutNet - ログイン</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
         body {
@@ -18,7 +18,7 @@
             max-width:400px;
             margin:60px auto;
             background:white;
-            padding:30px;
+            padding:25px;
             border-radius:16px;
             border:2px solid #D7C4A3;
             box-shadow:0 4px 0 #D7C4A3;
@@ -26,16 +26,15 @@
 
         h2 {
             text-align:center;
-            color:#2E7D32;
             margin-bottom:20px;
         }
 
-        .input {
+        input {
             width:100%;
             padding:12px;
+            margin-bottom:12px;
             border:1px solid #D7C4A3;
             border-radius:10px;
-            margin-bottom:16px;
         }
 
         .btn {
@@ -51,93 +50,74 @@
             margin-top:10px;
         }
 
-        a {
+        .link {
+            text-align:center;
+            margin-top:15px;
+        }
+
+        .link a {
             color:#2E7D32;
             text-decoration:none;
             font-weight:600;
-            display:block;
-            text-align:center;
-            margin-top:10px;
-        }
-
-        .error {
-            color:red;
-            text-align:center;
-            margin-bottom:10px;
         }
     </style>
 </head>
 <body>
 
-<script>
-// ログイン済みならホームへ
-const user = localStorage.getItem("currentUser");
-if (user) {
-    location.href = "home.html";
-}
-</script>
-
 <div class="container">
-    <h2>🏕 ScoutNet</h2>
+    <h2>ScoutNet ログイン</h2>
 
-    <div id="error" class="error"></div>
-
-    <input type="text" id="loginId" class="input" placeholder="ログインID（8文字以上）">
-    <input type="password" id="password" class="input" placeholder="パスワード">
+    <input type="email" id="email" placeholder="メールアドレス">
+    <input type="password" id="password" placeholder="パスワード">
 
     <button class="btn" id="loginBtn">ログイン</button>
 
-    <a href="about.html">ScoutNetについて</a>
-
-    <button class="btn" onclick="location.href='signup.html'">新規登録</button>
+    <div class="link">
+        <a href="signup.html">アカウントを作成する</a>
+    </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+    getAuth, signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
     storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
-  };
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    const id = document.getElementById("loginId").value.trim();
-    const pw = document.getElementById("password").value.trim();
-    const error = document.getElementById("error");
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    error.textContent = "";
-
-    if (id.length < 8 || pw.length < 8) {
-        error.textContent = "IDとパスワードは8文字以上です";
+    if (!email || !password) {
+        alert("メールアドレスとパスワードを入力してください");
         return;
     }
 
-    const ref = doc(db, "users", id);
-    const snap = await getDoc(ref);
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-    if (!snap.exists()) {
-        error.textContent = "そのIDは存在しません";
-        return;
+        // ログイン成功 → user.uid を保存
+        localStorage.setItem("currentUser", user.uid);
+
+        alert("ログインしました！");
+        location.href = "home.html";
+
+    } catch (error) {
+        alert("ログインに失敗しました：" + error.message);
     }
-
-    const data = snap.data();
-
-    if (data.password !== pw) {
-        error.textContent = "パスワードが違います";
-        return;
-    }
-
-    localStorage.setItem("currentUser", id);
-    location.href = "home.html";
-  });
+});
 </script>
 
 </body>
