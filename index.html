@@ -12,11 +12,9 @@
 const currentUser = localStorage.getItem("currentUser");
 
 if (currentUser) {
-    // ログイン済み → ホームへ
-    location.href = "home.html";
+    location.href = "home.html";   // ログイン済み
 } else {
-    // 未ログイン → ログイン画面へ
-    location.href = "login.html";
+    location.href = "login.html";  // 未ログイン
 }
 </script>
 
