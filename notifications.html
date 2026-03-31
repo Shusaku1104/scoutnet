@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ScoutNet - 新規投稿</title>
+    <title>ScoutNet - 通知</title>
 
     <style>
         body {
@@ -39,55 +39,25 @@
             padding:0 15px;
         }
 
-        .card {
+        .notice {
             background:white;
             border:2px solid #D7C4A3;
             border-radius:16px;
-            padding:20px;
-            box-shadow:0 4px 0 #D7C4A3;
-        }
-
-        input, textarea {
-            width:100%;
-            padding:12px;
-            border:1px solid #D7C4A3;
-            border-radius:10px;
+            padding:16px;
             margin-bottom:15px;
-            font-size:16px;
-        }
-
-        .btn {
-            width:100%;
-            padding:14px;
-            background:#2E7D32;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-weight:600;
+            box-shadow:0 4px 0 #D7C4A3;
             cursor:pointer;
-            box-shadow:0 3px 0 #1B5E20;
-            margin-top:10px;
         }
 
-        .preview-img {
-            width:100%;
-            border-radius:12px;
-            margin-bottom:10px;
-        }
-
-        .file-item {
-            margin-bottom:8px;
-            font-size:15px;
-        }
-
-        @media (max-width:480px) {
-            input, textarea { font-size:15px; }
+        .time {
+            font-size:12px;
+            color:#6d6d6d;
+            margin-top:5px;
         }
     </style>
 </head>
 <body>
 
-<!-- ナビバー -->
 <nav>
     <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
@@ -95,123 +65,75 @@
 
     <div>
         <a href="home.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
 <div class="container">
-    <div class="card">
-
-        <h2>新規投稿</h2>
-
-        <input id="title" placeholder="タイトル">
-
-        <textarea id="description" rows="5" placeholder="説明文"></textarea>
-
-        <h3>📷 画像を選択（複数OK）</h3>
-        <input type="file" id="images" accept="image/*" multiple>
-        <div id="imagePreview"></div>
-
-        <h3>📎 ファイルを選択（複数OK）</h3>
-        <input type="file" id="files" multiple>
-        <div id="fileList"></div>
-
-        <button class="btn" id="postBtn">投稿する</button>
-
-    </div>
+    <h2>🔔 通知</h2>
+    <div id="noticeList"></div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-// ログインチェック
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-// 画像プレビュー
-document.getElementById("images").addEventListener("change", e => {
-    const preview = document.getElementById("imagePreview");
-    preview.innerHTML = "";
+const noticeList = document.getElementById("noticeList");
 
-    [...e.target.files].forEach(file => {
-        const img = document.createElement("img");
-        img.className = "preview-img";
-        img.src = URL.createObjectURL(file);
-        preview.appendChild(img);
+const q = query(
+    collection(db, "notifications"),
+    where("to", "==", currentUser),
+    orderBy("createdAt", "desc")
+);
+
+onSnapshot(q, (snapshot) => {
+    noticeList.innerHTML = "";
+
+    snapshot.forEach((docSnap) => {
+        const n = docSnap.data();
+
+        const div = document.createElement("div");
+        div.className = "notice";
+
+        let text = "";
+
+        if (n.type === "newpost") {
+            text = `📢 新しい投稿が追加されました`;
+        } else if (n.type === "like") {
+            text = `❤️ ${n.from} さんがあなたの投稿にいいねしました`;
+        } else if (n.type === "comment") {
+            text = `💬 ${n.from} さんがあなたの投稿にコメントしました`;
+        }
+
+        div.innerHTML = `
+            <div>${text}</div>
+            <div class="time">${new Date(n.createdAt).toLocaleString()}</div>
+        `;
+
+        div.addEventListener("click", () => {
+            if (n.postId) {
+                location.href = "post.html?id=" + n.postId;
+            }
+        });
+
+        noticeList.appendChild(div);
     });
-});
-
-// ファイル一覧表示
-document.getElementById("files").addEventListener("change", e => {
-    const list = document.getElementById("fileList");
-    list.innerHTML = "";
-
-    [...e.target.files].forEach(file => {
-        list.innerHTML += `<div class="file-item">📄 ${file.name}</div>`;
-    });
-});
-
-// 投稿処理
-document.getElementById("postBtn").addEventListener("click", async () => {
-    const title = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value.trim();
-
-    if (!title || !description) {
-        alert("タイトルと説明文は必須です");
-        return;
-    }
-
-    const imageFiles = document.getElementById("images").files;
-    const otherFiles = document.getElementById("files").files;
-
-    const imageURLs = [];
-    const fileURLs = [];
-
-    // 画像アップロード
-    for (let file of imageFiles) {
-        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        imageURLs.push(url);
-    }
-
-    // ファイルアップロード
-    for (let file of otherFiles) {
-        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        fileURLs.push(url);
-    }
-
-    // Firestore に保存
-    await addDoc(collection(db, "posts"), {
-        title,
-        description,
-        images: imageURLs,
-        files: fileURLs,
-        createdBy: currentUser,
-        createdAt: Date.now()
-    });
-
-    alert("投稿しました！");
-    location.href = "home.html";
 });
 </script>
 

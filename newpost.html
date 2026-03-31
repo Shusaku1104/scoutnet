@@ -119,14 +119,14 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",  // ← 修正済み
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
@@ -135,7 +135,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// ログインチェック
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
@@ -194,8 +193,8 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         fileURLs.push(url);
     }
 
-    // Firestore に保存
-    await addDoc(collection(db, "posts"), {
+    // 投稿保存
+    const postDoc = await addDoc(collection(db, "posts"), {
         title,
         description,
         images: imageURLs,
@@ -203,6 +202,28 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdBy: currentUser,
         createdAt: Date.now()
     });
+
+    // 全ユーザーに「新規投稿」通知（雑に全員通知する例）
+    const usersSnap = await getDocs(collection(db, "users"));
+    const notificationsRef = collection(db, "notifications");
+
+    const postId = postDoc.id;
+
+    const promises = [];
+    usersSnap.forEach(u => {
+        const uid = u.id;
+        if (uid === currentUser) return; // 自分には送らないならここでスキップ
+        promises.push(
+            addDoc(notificationsRef, {
+                to: uid,
+                from: currentUser,
+                type: "newpost",
+                postId,
+                createdAt: Date.now()
+            })
+        );
+    });
+    await Promise.all(promises);
 
     alert("投稿しました！");
     location.href = "home.html";

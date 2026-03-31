@@ -7,14 +7,13 @@
 
     <style>
         body {
-            font-family: "Hiragigino Sans", "Yu Gothic", sans-serif;
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
             padding:0;
             color:#4E342E;
         }
 
-        /* ナビバー */
         nav {
             display:flex;
             justify-content:space-between;
@@ -40,7 +39,6 @@
             padding:0 15px;
         }
 
-        /* 投稿カード */
         .post-card {
             background:white;
             border:2px solid #D7C4A3;
@@ -49,7 +47,6 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
-        /* 画像スライド */
         .slider {
             position:relative;
             width:100%;
@@ -97,7 +94,6 @@
             margin-bottom:15px;
         }
 
-        /* ファイル一覧 */
         .file {
             margin-bottom:8px;
             font-size:16px;
@@ -109,7 +105,6 @@
             font-weight:600;
         }
 
-        /* コメント */
         .comment {
             background:#fafafa;
             border:1px solid #D7C4A3;
@@ -144,7 +139,6 @@
             margin-top:10px;
         }
 
-        /* レスポンシブ文字サイズ */
         @media (max-width:480px) {
             .title { font-size:20px; }
             .desc { font-size:15px; }
@@ -154,7 +148,6 @@
 </head>
 <body>
 
-<!-- ナビバー -->
 <nav>
     <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
@@ -171,7 +164,6 @@
 <div class="container">
     <div class="post-card">
 
-        <!-- 画像スライド -->
         <div class="slider" id="slider" style="display:none;">
             <div class="slides" id="slides"></div>
             <div class="dots" id="dots"></div>
@@ -197,7 +189,6 @@
     </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -206,7 +197,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
@@ -214,31 +205,29 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ログインチェック
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-// 投稿ID取得
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
-// 投稿データ読み込み
 const postRef = doc(db, "posts", postId);
 const postSnap = await getDoc(postRef);
 
+let postData = null;
+
 if (postSnap.exists()) {
     const post = postSnap.data();
+    postData = post;
 
     document.getElementById("title").textContent = post.title;
     document.getElementById("desc").textContent = post.description;
     document.getElementById("date").textContent = new Date(post.createdAt).toLocaleString();
 
-    // 投稿者名（プロフィールから取得）
     const userRef = doc(db, "users", post.createdBy);
     const userSnap = await getDoc(userRef);
     document.getElementById("author").textContent = userSnap.exists() ? userSnap.data().name : post.createdBy;
 
-    // 画像スライド
     if (post.images && post.images.length > 0) {
         const slider = document.getElementById("slider");
         const slides = document.getElementById("slides");
@@ -257,7 +246,6 @@ if (postSnap.exists()) {
         });
     }
 
-    // ファイル一覧
     const filesDiv = document.getElementById("files");
     if (post.files) {
         post.files.forEach(url => {
@@ -288,7 +276,7 @@ onSnapshot(q, (snapshot) => {
     });
 });
 
-// コメント送信
+// コメント送信＋通知
 document.getElementById("sendComment").addEventListener("click", async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
@@ -300,6 +288,17 @@ document.getElementById("sendComment").addEventListener("click", async () => {
     });
 
     document.getElementById("commentInput").value = "";
+
+    // 投稿者に通知（自分の投稿に自分でコメントした場合はスキップしてもいい）
+    if (postData && postData.createdBy && postData.createdBy !== currentUser) {
+        await addDoc(collection(db, "notifications"), {
+            to: postData.createdBy,
+            from: currentUser,
+            type: "comment",
+            postId,
+            createdAt: Date.now()
+        });
+    }
 });
 </script>
 

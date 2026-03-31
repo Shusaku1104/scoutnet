@@ -94,7 +94,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    storageBucket: "scoutnet-3ccb1.appspot.com",
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
@@ -102,13 +102,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ログインチェック
 const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
 
 const postList = document.getElementById("postList");
 
-// Firestore から投稿一覧を取得
 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
 
 onSnapshot(q, (snapshot) => {
@@ -121,14 +119,12 @@ onSnapshot(q, (snapshot) => {
         const div = document.createElement("div");
         div.className = "post";
 
-        // 画像（innerHTML の前に appendChild する）
         if (post.images && post.images.length > 0) {
             const img = document.createElement("img");
             img.src = post.images[0];
             div.appendChild(img);
         }
 
-        // innerHTML で上書きしないように、追加方式に変更
         const title = document.createElement("div");
         title.className = "title";
         title.textContent = post.title;
