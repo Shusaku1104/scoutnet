@@ -33,6 +33,40 @@
             margin-left:15px;
         }
 
+        /* カテゴリボタン */
+        #categoryBtn {
+            background:#2E7D32;
+            color:white;
+            padding:8px 14px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:600;
+            border:none;
+        }
+
+        /* カテゴリメニュー */
+        #categoryMenu {
+            position:absolute;
+            right:20px;
+            top:60px;
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:12px;
+            box-shadow:0 4px 0 #D7C4A3;
+            display:none;
+            width:150px;
+        }
+
+        .category-item {
+            padding:12px;
+            cursor:pointer;
+            border-bottom:1px solid #EEE;
+        }
+
+        .category-item:hover {
+            background:#F1F8E9;
+        }
+
         .container {
             max-width:600px;
             margin:20px auto;
@@ -61,6 +95,17 @@
             margin-bottom:8px;
         }
 
+        .category-tag {
+            display:inline-block;
+            background:#E8F5E9;
+            color:#2E7D32;
+            padding:4px 10px;
+            border-radius:8px;
+            font-size:13px;
+            margin-bottom:6px;
+            border:1px solid #A5D6A7;
+        }
+
         .desc {
             font-size:15px;
             margin-bottom:10px;
@@ -74,13 +119,22 @@
         🏕 ScoutNet
     </div>
 
-    <div>
-        <a href="home.html">ホーム</a>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <button id="categoryBtn">カテゴリ ▼</button>
+
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
+
+<!-- カテゴリメニュー -->
+<div id="categoryMenu">
+    <div class="category-item" data-cat="すべて">すべて</div>
+    <div class="category-item" data-cat="アウトドア">アウトドア</div>
+    <div class="category-item" data-cat="インドア">インドア</div>
+    <div class="category-item" data-cat="奉仕">奉仕</div>
+</div>
 
 <div class="container">
     <div id="postList"></div>
@@ -88,7 +142,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
@@ -106,43 +160,84 @@ const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
 
 const postList = document.getElementById("postList");
+const categoryBtn = document.getElementById("categoryBtn");
+const categoryMenu = document.getElementById("categoryMenu");
 
-const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+let currentCategory = "すべて";
 
-onSnapshot(q, (snapshot) => {
-    postList.innerHTML = "";
+/* カテゴリメニューの表示切替 */
+categoryBtn.addEventListener("click", () => {
+    categoryMenu.style.display =
+        categoryMenu.style.display === "block" ? "none" : "block";
+});
 
-    snapshot.forEach((docSnap) => {
-        const post = docSnap.data();
-        const id = docSnap.id;
-
-        const div = document.createElement("div");
-        div.className = "post";
-
-        if (post.images && post.images.length > 0) {
-            const img = document.createElement("img");
-            img.src = post.images[0];
-            div.appendChild(img);
-        }
-
-        const title = document.createElement("div");
-        title.className = "title";
-        title.textContent = post.title;
-
-        const desc = document.createElement("div");
-        desc.className = "desc";
-        desc.textContent = post.description;
-
-        div.appendChild(title);
-        div.appendChild(desc);
-
-        div.addEventListener("click", () => {
-            location.href = "post.html?id=" + id;
-        });
-
-        postList.appendChild(div);
+/* カテゴリ選択 */
+document.querySelectorAll(".category-item").forEach(item => {
+    item.addEventListener("click", () => {
+        currentCategory = item.dataset.cat;
+        categoryMenu.style.display = "none";
+        loadPosts();
     });
 });
+
+/* 投稿読み込み（カテゴリ対応） */
+function loadPosts() {
+    postList.innerHTML = "";
+
+    let q;
+
+    if (currentCategory === "すべて") {
+        q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    } else {
+        q = query(
+            collection(db, "posts"),
+            where("category", "==", currentCategory),
+            orderBy("createdAt", "desc")
+        );
+    }
+
+    onSnapshot(q, (snapshot) => {
+        postList.innerHTML = "";
+
+        snapshot.forEach((docSnap) => {
+            const post = docSnap.data();
+            const id = docSnap.id;
+
+            const div = document.createElement("div");
+            div.className = "post";
+
+            if (post.images && post.images.length > 0) {
+                const img = document.createElement("img");
+                img.src = post.images[0];
+                div.appendChild(img);
+            }
+
+            const tag = document.createElement("div");
+            tag.className = "category-tag";
+            tag.textContent = post.category;
+            div.appendChild(tag);
+
+            const title = document.createElement("div");
+            title.className = "title";
+            title.textContent = post.title;
+
+            const desc = document.createElement("div");
+            desc.className = "desc";
+            desc.textContent = post.description;
+
+            div.appendChild(title);
+            div.appendChild(desc);
+
+            div.addEventListener("click", () => {
+                location.href = "post.html?id=" + id;
+            });
+
+            postList.appendChild(div);
+        });
+    });
+}
+
+loadPosts();
 </script>
 
 </body>
