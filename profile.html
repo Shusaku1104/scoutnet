@@ -78,15 +78,10 @@
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
         }
-
-        @media (max-width:480px) {
-            input, textarea { font-size:15px; }
-        }
     </style>
 </head>
 <body>
 
-<!-- ナビバー -->
 <nav>
     <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
@@ -119,7 +114,6 @@
     </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -129,7 +123,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
     authDomain: "scoutnet-3ccb1.firebaseapp.com",
     projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
+    storageBucket: "scoutnet-3ccb1.appspot.com",  // ← 修正済み
     messagingSenderId: "619869604171",
     appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
 };
@@ -138,13 +132,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// ログインチェック
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
 const userRef = doc(db, "users", currentUser);
 
-// 初期読み込み
 const profileImg = document.getElementById("profileImg");
 const nameInput = document.getElementById("nameInput");
 const bioInput = document.getElementById("bioInput");
@@ -152,6 +144,7 @@ const imgInput = document.getElementById("imgInput");
 
 let selectedImageFile = null;
 
+// 初期読み込み
 (async () => {
     const snap = await getDoc(userRef);
     if (snap.exists()) {
@@ -162,7 +155,7 @@ let selectedImageFile = null;
     }
 })();
 
-// アイコン選択 → プレビュー
+// アイコンプレビュー
 imgInput.addEventListener("change", e => {
     selectedImageFile = e.target.files[0];
     if (!selectedImageFile) return;
@@ -181,7 +174,6 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
     let iconUrl = profileImg.src;
 
-    // アイコンアップロード
     if (selectedImageFile) {
         const iconRef = ref(storage, `icons/${currentUser}.jpg`);
         await uploadBytes(iconRef, selectedImageFile);
