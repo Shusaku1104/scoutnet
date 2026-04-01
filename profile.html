@@ -111,7 +111,10 @@
     <div class="profile-card">
 
         <img id="icon" class="icon">
-        <input type="file" id="iconInput" style="display:none;">
+
+        <!-- display:none を禁止 → スマホで files が消えるため -->
+        <input type="file" id="iconInput" accept="image/*"
+               style="opacity:0; position:absolute; width:1px; height:1px;">
 
         <div id="profileView">
             <div class="label">名前</div>
@@ -136,7 +139,7 @@
         </div>
 
         <div id="profileEdit" style="display:none;">
-            <button class="btn" onclick="document.getElementById('iconInput').click()">画像を変更</button>
+            <button class="btn" id="changeIconBtn">画像を変更</button>
 
             <input id="editName" class="edit-input" placeholder="名前">
             <input id="editPref" class="edit-input" placeholder="都道府県">
@@ -209,6 +212,23 @@ db.collection("users").doc(currentUser).get().then(async (doc) => {
         document.getElementById("profileView").style.display = "block";
         document.getElementById("profileEdit").style.display = "none";
     };
+
+    /* アイコン変更ボタン */
+    document.getElementById("changeIconBtn").onclick = () => {
+        document.getElementById("iconInput").click();
+    };
+
+    /* アイコンプレビュー */
+    document.getElementById("iconInput").addEventListener("change", () => {
+        const file = document.getElementById("iconInput").files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                document.getElementById("icon").src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 
     /* 保存処理 */
     document.getElementById("saveBtn").onclick = async () => {
