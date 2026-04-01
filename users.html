@@ -5,6 +5,10 @@
     <title>ScoutNet - ユーザープロフィール</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -66,7 +70,6 @@
             margin-bottom:10px;
         }
 
-        /* 投稿カード */
         .post-card {
             background:white;
             border:2px solid #D7C4A3;
@@ -130,51 +133,49 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getFirestore, doc, getDoc, collection, query, where, getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const params = new URLSearchParams(location.search);
 const userId = params.get("id");
 
-const userRef = doc(db, "users", userId);
-const userSnap = await getDoc(userRef);
-
 const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
 
-if (userSnap.exists()) {
-    const u = userSnap.data();
+/* ユーザーデータ読み込み */
+db.collection("users").doc(userId).get().then(async (snap) => {
+    if (!snap.exists) return;
+
+    const u = snap.data();
 
     document.getElementById("icon").src = u.iconURL || defaultIcon;
     document.getElementById("name").textContent = u.name;
     document.getElementById("team").textContent = `${u.prefecture} ${u.troop}`;
     document.getElementById("bio").textContent = u.bio || "（未設定）";
 
-    // 投稿数
-    const postsQ = query(collection(db, "posts"), where("createdBy", "==", userId));
-    const postsSnap = await getDocs(postsQ);
+    /* 投稿数 */
+    const postsSnap = await db.collection("posts")
+        .where("createdBy", "==", userId)
+        .get();
     document.getElementById("postCount").textContent = postsSnap.size;
 
-    // いいね数
-    const likesQ = query(collection(db, "likes"), where("user", "==", userId));
-    const likesSnap = await getDocs(likesQ);
+    /* いいね数 */
+    const likesSnap = await db.collection("likes")
+        .where("user", "==", userId)
+        .get();
     document.getElementById("likeCount").textContent = likesSnap.size;
 
-    // 投稿一覧
+    /* 投稿一覧 */
     const postsDiv = document.getElementById("userPosts");
     postsDiv.innerHTML = "";
 
@@ -188,7 +189,7 @@ if (userSnap.exists()) {
             </div>
         `;
     });
-}
+});
 </script>
 
 </body>
