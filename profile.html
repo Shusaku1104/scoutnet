@@ -5,6 +5,11 @@
     <title>ScoutNet - プロフィール</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -45,8 +50,6 @@
             border-radius:16px;
             padding:20px;
             box-shadow:0 4px 0 #D7C4A3;
-            position: relative;   /* ← 追加 */
-            z-index: 200;         /* ← 追加 */
         }
 
         .icon {
@@ -59,14 +62,8 @@
             background:#ddd;
         }
 
-        .label {
-            font-weight:700;
-            margin-top:10px;
-        }
-
-        .value {
-            margin-bottom:10px;
-        }
+        .label { font-weight:700; margin-top:10px; }
+        .value { margin-bottom:10px; }
 
         .edit-input {
             width:100%;
@@ -113,10 +110,7 @@
 <div class="container">
     <div class="profile-card">
 
-        <!-- プロフィール画像 -->
         <img id="icon" class="icon">
-
-        <!-- 編集モード用 -->
         <input type="file" id="iconInput" style="display:none;">
 
         <div id="profileView">
@@ -141,7 +135,6 @@
             <button class="btn" id="editBtn">編集する</button>
         </div>
 
-        <!-- 編集モード -->
         <div id="profileEdit" style="display:none;">
             <button class="btn" onclick="document.getElementById('iconInput').click()">画像を変更</button>
 
@@ -157,100 +150,95 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import {
-    getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
+/* ログイン確認 */
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-const userRef = doc(db, "users", currentUser);
-const userSnap = await getDoc(userRef);
+/* Firestore からユーザーデータ取得 */
+db.collection("users").doc(currentUser).get().then(async (doc) => {
+    const userData = doc.data();
 
-let userData = userSnap.data();
+    const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
 
-// デフォルトアイコン
-const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
+    document.getElementById("icon").src = userData.iconURL || defaultIcon;
+    document.getElementById("name").textContent = userData.name;
+    document.getElementById("email").textContent = userData.email;
+    document.getElementById("team").textContent = `${userData.prefecture} ${userData.troop}`;
+    document.getElementById("bio").textContent = userData.bio || "（未設定）";
 
-// 表示モードに反映
-document.getElementById("icon").src = userData.iconURL || defaultIcon;
-document.getElementById("name").textContent = userData.name;
-document.getElementById("email").textContent = userData.email;
-document.getElementById("team").textContent = `${userData.prefecture} ${userData.troop}`;
-document.getElementById("bio").textContent = userData.bio || "（未設定）";
+    /* 投稿数 */
+    const postsSnap = await db.collection("posts")
+        .where("createdBy", "==", currentUser)
+        .get();
+    document.getElementById("postCount").textContent = postsSnap.size;
 
-// 投稿数
-const postsQ = query(collection(db, "posts"), where("createdBy", "==", currentUser));
-const postsSnap = await getDocs(postsQ);
-document.getElementById("postCount").textContent = postsSnap.size;
+    /* いいね数 */
+    const likesSnap = await db.collection("likes")
+        .where("user", "==", currentUser)
+        .get();
+    document.getElementById("likeCount").textContent = likesSnap.size;
 
-// いいね数
-const likesQ = query(collection(db, "likes"), where("user", "==", currentUser));
-const likesSnap = await getDocs(likesQ);
-document.getElementById("likeCount").textContent = likesSnap.size;
+    /* 編集モードへ */
+    document.getElementById("editBtn").onclick = () => {
+        document.getElementById("profileView").style.display = "none";
+        document.getElementById("profileEdit").style.display = "block";
 
-// 編集ボタン
-document.getElementById("editBtn").addEventListener("click", () => {
-    document.getElementById("profileView").style.display = "none";
-    document.getElementById("profileEdit").style.display = "block";
+        document.getElementById("editName").value = userData.name;
+        document.getElementById("editPref").value = userData.prefecture;
+        document.getElementById("editTroop").value = userData.troop;
+        document.getElementById("editBio").value = userData.bio || "";
+    };
 
-    document.getElementById("editName").value = userData.name;
-    document.getElementById("editPref").value = userData.prefecture;
-    document.getElementById("editTroop").value = userData.troop;
-    document.getElementById("editBio").value = userData.bio || "";
-});
+    /* キャンセル */
+    document.getElementById("cancelBtn").onclick = () => {
+        document.getElementById("profileView").style.display = "block";
+        document.getElementById("profileEdit").style.display = "none";
+    };
 
-// キャンセル
-document.getElementById("cancelBtn").addEventListener("click", () => {
-    document.getElementById("profileView").style.display = "block";
-    document.getElementById("profileEdit").style.display = "none";
-});
+    /* 保存処理 */
+    document.getElementById("saveBtn").onclick = async () => {
+        const newName = document.getElementById("editName").value;
+        const newPref = document.getElementById("editPref").value;
+        const newTroop = document.getElementById("editTroop").value;
+        const newBio = document.getElementById("editBio").value;
 
-// 保存
-document.getElementById("saveBtn").addEventListener("click", async () => {
-    const newName = document.getElementById("editName").value;
-    const newPref = document.getElementById("editPref").value;
-    const newTroop = document.getElementById("editTroop").value;
-    const newBio = document.getElementById("editBio").value;
+        let newIconURL = userData.iconURL;
 
-    let newIconURL = userData.iconURL;
+        /* アイコン変更 */
+        const file = document.getElementById("iconInput").files[0];
+        if (file) {
+            const iconRef = storage.ref(`icons/${currentUser}.jpg`);
+            await iconRef.put(file);
+            newIconURL = await iconRef.getDownloadURL();
+        }
 
-    // アイコン変更
-    const file = document.getElementById("iconInput").files[0];
-    if (file) {
-        const iconRef = ref(storage, `icons/${currentUser}.jpg`);
-        await uploadBytes(iconRef, file);
-        newIconURL = await getDownloadURL(iconRef);
-    }
+        /* Firestore 更新 */
+        await db.collection("users").doc(currentUser).update({
+            name: newName,
+            prefecture: newPref,
+            troop: newTroop,
+            bio: newBio,
+            iconURL: newIconURL
+        });
 
-    await updateDoc(userRef, {
-        name: newName,
-        prefecture: newPref,
-        troop: newTroop,
-        bio: newBio,
-        iconURL: newIconURL
-    });
-
-    alert("プロフィールを更新しました");
-    location.reload();
+        alert("プロフィールを更新しました");
+        location.reload();
+    };
 });
 </script>
 
