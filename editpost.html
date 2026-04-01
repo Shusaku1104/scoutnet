@@ -5,11 +5,13 @@
     <title>ScoutNet - 投稿編集</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
     <style>
-        /* 端末幅に応じてフォント自動調整 */
-        html {
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
+        html { font-size: clamp(14px, 2.5vw, 18px); }
 
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -76,30 +78,6 @@
             border-radius: 12px;
             margin-top: 10px;
         }
-
-        /* スマホ向け最適化 */
-        @media (max-width: 480px) {
-            nav div:first-child {
-                font-size: 1.2rem;
-            }
-
-            nav a {
-                font-size: 0.8rem;
-            }
-
-            .card {
-                margin: 12px;
-                padding: 16px;
-            }
-
-            .input {
-                font-size: 0.95rem;
-            }
-
-            .submit-btn {
-                font-size: 1rem;
-            }
-        }
     </style>
 </head>
 <body>
@@ -110,7 +88,7 @@
     </div>
 
     <div style="display:flex; gap:18px; font-weight:600;">
-        <a href="index.html">ホーム</a>
+        <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
@@ -128,8 +106,9 @@
 
     <label>カテゴリ</label>
     <select id="category" class="input">
-        <option value="indoor">🏠 Indoor</option>
-        <option value="outdoor">⛺ Outdoor</option>
+        <option value="アウトドア">⛺ アウトドア</option>
+        <option value="インドア">🏠 インドア</option>
+        <option value="奉仕">🤝 奉仕</option>
     </select>
 
     <label>画像を変更（任意）</label>
@@ -140,63 +119,49 @@
     <button id="submit" class="submit-btn">更新する</button>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-
 <script>
-// 🔥 GitHub に公開しても安全なダミー設定
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.firebasestorage.app",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
-const auth = firebase.auth();
 
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
-let currentUser = null;
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
+
 let originalImages = [];
 
-// 🔥 ログインチェック
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-    currentUser = user;
-});
-
-// 🔥 投稿読み込み
+/* 投稿読み込み */
 db.collection("posts").doc(postId).get().then(doc => {
     if (!doc.exists) {
         alert("投稿が見つかりません");
-        location.href = "index.html";
+        location.href = "home.html";
         return;
     }
 
     const post = doc.data();
 
-    // 投稿者本人チェック
-    if (post.userId !== currentUser.uid) {
+    /* 投稿者チェック */
+    if (post.createdBy !== currentUser) {
         alert("この投稿を編集する権限がありません");
-        location.href = "index.html";
+        location.href = "home.html";
         return;
     }
 
     document.getElementById("title").value = post.title;
     document.getElementById("description").value = post.description;
-    document.getElementById("category").value = post.genre;
+    document.getElementById("category").value = post.category;
 
     originalImages = post.images || [];
 
@@ -207,7 +172,7 @@ db.collection("posts").doc(postId).get().then(doc => {
     }
 });
 
-// 🔥 画像プレビュー
+/* 画像プレビュー */
 document.getElementById("imageInput").addEventListener("change", function() {
     const file = this.files[0];
     if (!file) return;
@@ -221,8 +186,8 @@ document.getElementById("imageInput").addEventListener("change", function() {
     reader.readAsDataURL(file);
 });
 
-// 🔥 更新処理
-document.getElementById("submit").addEventListener("click", async () => {
+/* 更新処理 */
+document.getElementById("submit").onclick = async () => {
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
@@ -245,13 +210,13 @@ document.getElementById("submit").addEventListener("click", async () => {
     await db.collection("posts").doc(postId).update({
         title,
         description,
-        genre: category,
+        category,
         images: imageUrls
     });
 
     alert("投稿を更新しました！");
     location.href = "post.html?id=" + postId;
-});
+};
 </script>
 
 </body>
