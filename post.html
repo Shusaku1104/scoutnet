@@ -5,6 +5,11 @@
     <title>ScoutNet - 投稿詳細</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -47,7 +52,6 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
-        /* 画像スライダー */
         .slider {
             position: relative;
             width: 100%;
@@ -180,7 +184,6 @@
 <div class="container">
     <div class="post-card">
 
-        <!-- 画像スライダー -->
         <div class="slider">
             <button class="slide-btn" id="prevBtn">←</button>
             <img id="slideImage" class="slide-img">
@@ -198,13 +201,11 @@
             投稿日時：<span id="date"></span>
         </p>
 
-        <!-- ❤️ いいね -->
         <div>
             <span id="likeBtn" class="like-btn">🤍</span>
             <span id="likeCount" class="like-count">0件</span>
         </div>
 
-        <!-- 削除ボタン -->
         <button id="deleteBtn" class="delete-btn" style="display:none;">投稿を削除する</button>
 
         <h3>💬 コメント</h3>
@@ -216,27 +217,20 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, setDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import {
-    getStorage, ref, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
@@ -244,28 +238,28 @@ if (!currentUser) location.href = "login.html";
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
-const postRef = doc(db, "posts", postId);
-const likeRef = doc(db, "posts", postId, "likes", currentUser);
+const postRef = db.collection("posts").doc(postId);
+const likeRef = postRef.collection("likes").doc(currentUser);
 
 let postData = null;
 
-// 投稿読み込み
-const postSnap = await getDoc(postRef);
-if (postSnap.exists()) {
-    const post = postSnap.data();
+/* 投稿読み込み */
+postRef.get().then(async (snap) => {
+    if (!snap.exists) return;
+
+    const post = snap.data();
     postData = post;
 
     document.getElementById("title").textContent = post.title;
     document.getElementById("desc").textContent = post.description;
     document.getElementById("date").textContent = new Date(post.createdAt).toLocaleString();
 
-    // 投稿者名
-    const userRef = doc(db, "users", post.createdBy);
-    const userSnap = await getDoc(userRef);
+    /* 投稿者名 */
+    const userSnap = await db.collection("users").doc(post.createdBy).get();
     document.getElementById("author").textContent =
-        userSnap.exists() ? userSnap.data().name : post.createdBy;
+        userSnap.exists ? userSnap.data().name : post.createdBy;
 
-    // ファイル
+    /* 添付ファイル */
     const filesDiv = document.getElementById("files");
     if (post.files) {
         post.files.forEach(url => {
@@ -276,12 +270,12 @@ if (postSnap.exists()) {
         });
     }
 
-    // 投稿者なら削除ボタン表示
+    /* 投稿者なら削除ボタン表示 */
     if (post.createdBy === currentUser) {
         document.getElementById("deleteBtn").style.display = "block";
     }
 
-    // 画像スライダー
+    /* 画像スライダー */
     const slideImage = document.getElementById("slideImage");
     let images = post.images || [];
     let currentIndex = 0;
@@ -294,46 +288,45 @@ if (postSnap.exists()) {
         }
     }
 
-    document.getElementById("prevBtn").addEventListener("click", () => {
+    document.getElementById("prevBtn").onclick = () => {
         if (images.length === 0) return;
         currentIndex = (currentIndex - 1 + images.length) % images.length;
         updateSlide();
-    });
+    };
 
-    document.getElementById("nextBtn").addEventListener("click", () => {
+    document.getElementById("nextBtn").onclick = () => {
         if (images.length === 0) return;
         currentIndex = (currentIndex + 1) % images.length;
         updateSlide();
-    });
+    };
 
     updateSlide();
-}
-
-// ❤️ いいね状態チェック
-onSnapshot(likeRef, (snap) => {
-    const likeBtn = document.getElementById("likeBtn");
-    likeBtn.textContent = snap.exists() ? "❤️" : "🤍";
 });
 
-// ❤️ いいね数
-onSnapshot(collection(db, "posts", postId, "likes"), (snapshot) => {
+/* ❤️ いいね状態 */
+likeRef.onSnapshot((snap) => {
+    document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
+});
+
+/* ❤️ いいね数 */
+postRef.collection("likes").onSnapshot((snapshot) => {
     document.getElementById("likeCount").textContent = snapshot.size + "件";
 });
 
-// ❤️ いいね押したとき
-document.getElementById("likeBtn").addEventListener("click", async () => {
-    const snap = await getDoc(likeRef);
+/* ❤️ いいね押したとき */
+document.getElementById("likeBtn").onclick = async () => {
+    const snap = await likeRef.get();
 
-    if (snap.exists()) {
-        await deleteDoc(likeRef);
+    if (snap.exists) {
+        await likeRef.delete();
     } else {
-        await setDoc(likeRef, {
+        await likeRef.set({
             user: currentUser,
             createdAt: Date.now()
         });
 
         if (postData.createdBy !== currentUser) {
-            await addDoc(collection(db, "notifications"), {
+            await db.collection("notifications").add({
                 to: postData.createdBy,
                 from: currentUser,
                 type: "like",
@@ -342,13 +335,12 @@ document.getElementById("likeBtn").addEventListener("click", async () => {
             });
         }
     }
-});
+};
 
-// 💬 コメント読み込み
-const commentsRef = collection(db, "posts", postId, "comments");
-const q = query(commentsRef, orderBy("createdAt", "asc"));
+/* 💬 コメント読み込み */
+const commentsRef = postRef.collection("comments").orderBy("createdAt", "asc");
 
-onSnapshot(q, (snapshot) => {
+commentsRef.onSnapshot((snapshot) => {
     const commentsDiv = document.getElementById("comments");
     commentsDiv.innerHTML = "";
 
@@ -363,12 +355,12 @@ onSnapshot(q, (snapshot) => {
     });
 });
 
-// 💬 コメント送信
-document.getElementById("sendComment").addEventListener("click", async () => {
+/* 💬 コメント送信 */
+document.getElementById("sendComment").onclick = async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
 
-    await addDoc(commentsRef, {
+    await postRef.collection("comments").add({
         text,
         user: currentUser,
         createdAt: Date.now()
@@ -377,7 +369,7 @@ document.getElementById("sendComment").addEventListener("click", async () => {
     document.getElementById("commentInput").value = "";
 
     if (postData.createdBy !== currentUser) {
-        await addDoc(collection(db, "notifications"), {
+        await db.collection("notifications").add({
             to: postData.createdBy,
             from: currentUser,
             type: "comment",
@@ -385,31 +377,33 @@ document.getElementById("sendComment").addEventListener("click", async () => {
             createdAt: Date.now()
         });
     }
-});
+};
 
-// 🗑 投稿削除
-document.getElementById("deleteBtn").addEventListener("click", async () => {
+/* 🗑 投稿削除 */
+document.getElementById("deleteBtn").onclick = async () => {
     if (!confirm("本当に削除しますか？")) return;
 
+    /* 画像削除 */
     if (postData.images) {
         for (let url of postData.images) {
             const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-            await deleteObject(ref(storage, path));
+            await storage.ref(path).delete();
         }
     }
 
+    /* ファイル削除 */
     if (postData.files) {
         for (let url of postData.files) {
             const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-            await deleteObject(ref(storage, path));
+            await storage.ref(path).delete();
         }
     }
 
-    await deleteDoc(postRef);
+    await postRef.delete();
 
     alert("投稿を削除しました");
     location.href = "home.html";
-});
+};
 </script>
 
 </body>
