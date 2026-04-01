@@ -112,7 +112,7 @@
 
         <img id="icon" class="icon">
 
-        <!-- display:none を禁止 → スマホで files が消えるため -->
+        <!-- display:none を禁止（スマホで files が消えるため） -->
         <input type="file" id="iconInput" accept="image/*"
                style="opacity:0; position:absolute; width:1px; height:1px;">
 
@@ -174,7 +174,7 @@ if (!currentUser) location.href = "login.html";
 
 /* Firestore からユーザーデータ取得 */
 db.collection("users").doc(currentUser).get().then(async (doc) => {
-    const userData = doc.data();
+    let userData = doc.data();   // ← ここを let にするのが超重要（保存できない原因）
 
     const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
 
