@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ScoutNet - 新規投稿</title>
 
+    <!-- Firebase 8系（スマホ安定版） -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -124,28 +129,26 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
+/* ログイン確認 */
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-// 画像プレビュー
+/* 画像プレビュー */
 document.getElementById("images").addEventListener("change", e => {
     const preview = document.getElementById("imagePreview");
     preview.innerHTML = "";
@@ -158,7 +161,7 @@ document.getElementById("images").addEventListener("change", e => {
     });
 });
 
-// ファイル一覧表示
+/* ファイル一覧表示 */
 document.getElementById("files").addEventListener("change", e => {
     const list = document.getElementById("fileList");
     list.innerHTML = "";
@@ -168,7 +171,7 @@ document.getElementById("files").addEventListener("change", e => {
     });
 });
 
-// 投稿処理
+/* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
@@ -185,54 +188,49 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageURLs = [];
     const fileURLs = [];
 
-    // 画像アップロード
+    /* 画像アップロード */
     for (let file of imageFiles) {
-        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+        const fileRef = storage.ref(`posts/${Date.now()}_${file.name}`);
+        await fileRef.put(file);
+        const url = await fileRef.getDownloadURL();
         imageURLs.push(url);
     }
 
-    // ファイルアップロード
+    /* ファイルアップロード */
     for (let file of otherFiles) {
-        const fileRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+        const fileRef = storage.ref(`posts/${Date.now()}_${file.name}`);
+        await fileRef.put(file);
+        const url = await fileRef.getDownloadURL();
         fileURLs.push(url);
     }
 
-    // 投稿保存
-    const postDoc = await addDoc(collection(db, "posts"), {
+    /* Firestore に投稿保存 */
+    const postRef = await db.collection("posts").add({
         title,
         description,
-        category,   // ← カテゴリ保存
+        category,
         images: imageURLs,
         files: fileURLs,
         createdBy: currentUser,
         createdAt: Date.now()
     });
 
-    // 通知処理（今のままでOK）
-    const usersSnap = await getDocs(collection(db, "users"));
-    const notificationsRef = collection(db, "notifications");
+    /* 通知処理 */
+    const usersSnap = await db.collection("users").get();
+    const postId = postRef.id;
 
-    const postId = postDoc.id;
-
-    const promises = [];
     usersSnap.forEach(u => {
         const uid = u.id;
         if (uid === currentUser) return;
-        promises.push(
-            addDoc(notificationsRef, {
-                to: uid,
-                from: currentUser,
-                type: "newpost",
-                postId,
-                createdAt: Date.now()
-            })
-        );
+
+        db.collection("notifications").add({
+            to: uid,
+            from: currentUser,
+            type: "newpost",
+            postId,
+            createdAt: Date.now()
+        });
     });
-    await Promise.all(promises);
 
     alert("投稿しました！");
     location.href = "home.html";
