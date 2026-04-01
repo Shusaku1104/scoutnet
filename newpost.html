@@ -1,134 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ScoutNet - 新規投稿</title>
-
-    <!-- Firebase 8系（スマホ安定版） -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-
-    <style>
-        body {
-            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background:#f5f5f5;
-            margin:0;
-            padding:0;
-            color:#4E342E;
-        }
-
-        nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
-            background:white;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:0;
-            z-index:100;
-        }
-
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            margin-left:15px;
-        }
-
-        .container {
-            max-width:600px;
-            margin:20px auto;
-            padding:0 15px;
-        }
-
-        .card {
-            background:white;
-            border:2px solid #D7C4A3;
-            border-radius:16px;
-            padding:20px;
-            box-shadow:0 4px 0 #D7C4A3;
-        }
-
-        input, textarea, select {
-            width:100%;
-            padding:12px;
-            border:1px solid #D7C4A3;
-            border-radius:10px;
-            margin-bottom:15px;
-            font-size:16px;
-        }
-
-        .btn {
-            width:100%;
-            padding:14px;
-            background:#2E7D32;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-weight:600;
-            cursor:pointer;
-            box-shadow:0 3px 0 #1B5E20;
-            margin-top:10px;
-        }
-
-        .preview-img {
-            width:100%;
-            border-radius:12px;
-            margin-bottom:10px;
-        }
-
-        .file-item {
-            margin-bottom:8px;
-            font-size:15px;
-        }
-    </style>
-</head>
-<body>
-
-<nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div>
-        <a href="home.html">ホーム</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
-    </div>
-</nav>
-
-<div class="container">
-    <div class="card">
-
-        <h2>新規投稿</h2>
-
-        <input id="title" placeholder="タイトル">
-
-        <textarea id="description" rows="5" placeholder="説明文"></textarea>
-
-        <h3>📌 カテゴリ</h3>
-        <select id="category">
-            <option value="アウトドア">アウトドア</option>
-            <option value="インドア">インドア</option>
-            <option value="奉仕">奉仕</option>
-        </select>
-
-        <h3>📷 画像を選択（複数OK）</h3>
-        <input type="file" id="images" accept="image/*" multiple>
-        <div id="imagePreview"></div>
-
-        <h3>📎 ファイルを選択（複数OK）</h3>
-        <input type="file" id="files" multiple>
-        <div id="fileList"></div>
-
-        <button class="btn" id="postBtn">投稿する</button>
-
-    </div>
-</div>
-
 <script>
 /* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
@@ -148,29 +17,6 @@ const storage = firebase.storage();
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-/* 画像プレビュー */
-document.getElementById("images").addEventListener("change", e => {
-    const preview = document.getElementById("imagePreview");
-    preview.innerHTML = "";
-
-    [...e.target.files].forEach(file => {
-        const img = document.createElement("img");
-        img.className = "preview-img";
-        img.src = URL.createObjectURL(file);
-        preview.appendChild(img);
-    });
-});
-
-/* ファイル一覧表示 */
-document.getElementById("files").addEventListener("change", e => {
-    const list = document.getElementById("fileList");
-    list.innerHTML = "";
-
-    [...e.target.files].forEach(file => {
-        list.innerHTML += `<div class="file-item">📄 ${file.name}</div>`;
-    });
-});
-
 /* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
     const title = document.getElementById("title").value.trim();
@@ -188,9 +34,12 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageURLs = [];
     const fileURLs = [];
 
+    /* 🔥 ファイル名を絶対に被らせないためのID */
+    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
+
     /* 画像アップロード */
     for (let file of imageFiles) {
-        const fileRef = storage.ref(`posts/${Date.now()}_${file.name}`);
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
         await fileRef.put(file);
         const url = await fileRef.getDownloadURL();
         imageURLs.push(url);
@@ -198,7 +47,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
 
     /* ファイルアップロード */
     for (let file of otherFiles) {
-        const fileRef = storage.ref(`posts/${Date.now()}_${file.name}`);
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
         await fileRef.put(file);
         const url = await fileRef.getDownloadURL();
         fileURLs.push(url);
@@ -236,6 +85,3 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     location.href = "home.html";
 });
 </script>
-
-</body>
-</html>
