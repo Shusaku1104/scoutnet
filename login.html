@@ -5,6 +5,10 @@
     <title>ScoutNet - ログイン</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -71,23 +75,22 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-  apiKey: "AIzaSyAy1dzUvC_dWtnEOsPZ-L3rPkbhPwiwaOU",
-  authDomain: "scoutnet2-80838.firebaseapp.com",
-  projectId: "scoutnet2-80838",
-  storageBucket: "scoutnet2-80838.appspot.com",
-  messagingSenderId: "847374706005",
-  appId: "1:847374706005:web:6a0415a2a8b13ee76efbdc"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12",
+  storageBucket: "scoutnet12.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-document.getElementById("loginBtn").addEventListener("click", async () => {
+/* ログイン処理 */
+document.getElementById("loginBtn").onclick = async () => {
     const id = document.getElementById("userId").value.trim();
     const pw = document.getElementById("password").value.trim();
 
@@ -96,10 +99,10 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
         return;
     }
 
-    const ref = doc(db, "users", id);
-    const snap = await getDoc(ref);
+    const ref = db.collection("users").doc(id);
+    const snap = await ref.get();
 
-    if (!snap.exists()) {
+    if (!snap.exists) {
         alert("このログインIDは登録されていません");
         return;
     }
@@ -114,7 +117,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     localStorage.setItem("currentUser", id);
     alert("ログイン成功！");
     location.href = "home.html";
-});
+};
 </script>
 
 </body>
