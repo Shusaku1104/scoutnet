@@ -5,6 +5,10 @@
     <title>ScoutNet - ホーム</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase 8系（スマホ安定版） -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -33,7 +37,6 @@
             margin-left:15px;
         }
 
-        /* カテゴリボタン */
         #categoryBtn {
             background:#2E7D32;
             color:white;
@@ -44,7 +47,6 @@
             border:none;
         }
 
-        /* カテゴリメニュー */
         #categoryMenu {
             position:absolute;
             right:20px;
@@ -128,7 +130,6 @@
     </div>
 </nav>
 
-<!-- カテゴリメニュー -->
 <div id="categoryMenu">
     <div class="category-item" data-cat="すべて">すべて</div>
     <div class="category-item" data-cat="アウトドア">アウトドア</div>
@@ -140,32 +141,32 @@
     <div id="postList"></div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
 const firebaseConfig = {
-    apiKey: "AIzaSyDrvBB4R30sV_AhzzpJY9_d5x0biDp8uyA",
-    authDomain: "scoutnet-3ccb1.firebaseapp.com",
-    projectId: "scoutnet-3ccb1",
-    storageBucket: "scoutnet-3ccb1.appspot.com",
-    messagingSenderId: "619869604171",
-    appId: "1:619869604171:web:7ba88ab8eb9a0bff0ec0ce"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
+/* ログイン確認 */
 const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
 
+/* UI 要素 */
 const postList = document.getElementById("postList");
 const categoryBtn = document.getElementById("categoryBtn");
 const categoryMenu = document.getElementById("categoryMenu");
 
 let currentCategory = "すべて";
 
-/* カテゴリメニューの表示切替 */
+/* カテゴリメニュー表示切替 */
 categoryBtn.addEventListener("click", () => {
     categoryMenu.style.display =
         categoryMenu.style.display === "block" ? "none" : "block";
@@ -184,24 +185,20 @@ document.querySelectorAll(".category-item").forEach(item => {
 function loadPosts() {
     postList.innerHTML = "";
 
-    let q;
+    let ref = db.collection("posts").orderBy("createdAt", "desc");
 
-    if (currentCategory === "すべて") {
-        q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    } else {
-        q = query(
-            collection(db, "posts"),
-            where("category", "==", currentCategory),
-            orderBy("createdAt", "desc")
-        );
+    if (currentCategory !== "すべて") {
+        ref = db.collection("posts")
+            .where("category", "==", currentCategory)
+            .orderBy("createdAt", "desc");
     }
 
-    onSnapshot(q, (snapshot) => {
+    ref.onSnapshot(snapshot => {
         postList.innerHTML = "";
 
-        snapshot.forEach((docSnap) => {
-            const post = docSnap.data();
-            const id = docSnap.id;
+        snapshot.forEach(doc => {
+            const post = doc.data();
+            const id = doc.id;
 
             const div = document.createElement("div");
             div.className = "post";
