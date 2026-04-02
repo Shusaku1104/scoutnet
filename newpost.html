@@ -81,6 +81,7 @@
             height:120px;
         }
 
+        /* 🔥 投稿ボタンを最前面にして押せるようにする */
         #postBtn {
             width:100%;
             background:#2E7D32;
@@ -93,6 +94,15 @@
             margin-top:20px;
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
+            position:relative;
+            z-index:10;
+        }
+
+        /* 🔥 file input の透明巨大化バグ対策 */
+        .file-input {
+            position:relative;
+            z-index:5;
+            display:block;
         }
     </style>
 </head>
@@ -129,10 +139,10 @@
         </select>
 
         <label>画像（複数可）</label>
-        <input type="file" id="images" accept="image/*" multiple>
+        <input type="file" id="images" accept="image/*" multiple class="file-input">
 
         <label>その他ファイル（複数可）</label>
-        <input type="file" id="files" multiple>
+        <input type="file" id="files" multiple class="file-input">
 
         <button id="postBtn">投稿する</button>
     </div>
