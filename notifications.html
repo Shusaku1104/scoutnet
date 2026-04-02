@@ -2,12 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ScoutNet - 通知</title>
-
-    <!-- Firebase 8系 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
         body {
@@ -30,6 +26,16 @@
             z-index:100;
         }
 
+        /* 横スクロール対応 */
+        nav div:last-child {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        nav div:last-child a {
+            display:inline-block;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
@@ -42,22 +48,6 @@
             margin:20px auto;
             padding:0 15px;
         }
-
-        .notice {
-            background:white;
-            border:2px solid #D7C4A3;
-            border-radius:16px;
-            padding:16px;
-            margin-bottom:15px;
-            box-shadow:0 4px 0 #D7C4A3;
-            cursor:pointer;
-        }
-
-        .time {
-            font-size:12px;
-            color:#6d6d6d;
-            margin-top:5px;
-        }
     </style>
 </head>
 <body>
@@ -67,76 +57,18 @@
         🏕 ScoutNet
     </div>
 
-    <div>
+    <div style="display:flex; align-items:center; gap:15px;">
         <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
 <div class="container">
-    <h2>🔔 通知</h2>
-    <div id="noticeList"></div>
+    <h2>通知一覧</h2>
+    <p>ここに通知を表示</p>
 </div>
-
-<script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "scoutnet12.firebaseapp.com",
-    projectId: "scoutnet12",
-    storageBucket: "scoutnet12.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
-
-const noticeList = document.getElementById("noticeList");
-
-/* 通知読み込み（リアルタイム） */
-db.collection("notifications")
-  .where("to", "==", currentUser)
-  .orderBy("createdAt", "desc")
-  .onSnapshot((snapshot) => {
-
-    noticeList.innerHTML = "";
-
-    snapshot.forEach((docSnap) => {
-        const n = docSnap.data();
-
-        const div = document.createElement("div");
-        div.className = "notice";
-
-        let text = "";
-
-        if (n.type === "newpost") {
-            text = `📢 新しい投稿が追加されました`;
-        } else if (n.type === "like") {
-            text = `❤️ ${n.from} さんがあなたの投稿にいいねしました`;
-        } else if (n.type === "comment") {
-            text = `💬 ${n.from} さんがあなたの投稿にコメントしました`;
-        }
-
-        div.innerHTML = `
-            <div>${text}</div>
-            <div class="time">${new Date(n.createdAt).toLocaleString()}</div>
-        `;
-
-        div.onclick = () => {
-            if (n.postId) {
-                location.href = "post.html?id=" + n.postId;
-            }
-        };
-
-        noticeList.appendChild(div);
-    });
-});
-</script>
 
 </body>
 </html>
