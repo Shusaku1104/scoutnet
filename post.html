@@ -31,6 +31,16 @@
             z-index:100;
         }
 
+        /* 🔥 横スクロール対応（home.html と同じ） */
+        nav div:last-child {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        nav div:last-child a {
+            display:inline-block;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
@@ -173,7 +183,7 @@
         🏕 ScoutNet
     </div>
 
-    <div>
+    <div style="display:flex; align-items:center; gap:15px;">
         <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
