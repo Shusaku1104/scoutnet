@@ -5,11 +5,6 @@
     <title>ScoutNet - プロフィール</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8系 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -31,6 +26,16 @@
             z-index:100;
         }
 
+        /* 横スクロール対応 */
+        nav div:last-child {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        nav div:last-child a {
+            display:inline-block;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
@@ -43,53 +48,6 @@
             margin:20px auto;
             padding:0 15px;
         }
-
-        .profile-card {
-            background:white;
-            border:2px solid #D7C4A3;
-            border-radius:16px;
-            padding:20px;
-            box-shadow:0 4px 0 #D7C4A3;
-        }
-
-        .icon {
-            width:120px;
-            height:120px;
-            border-radius:50%;
-            object-fit:cover;
-            display:block;
-            margin:0 auto 15px;
-            background:#ddd;
-        }
-
-        .label { font-weight:700; margin-top:10px; }
-        .value { margin-bottom:10px; }
-
-        .edit-input {
-            width:100%;
-            padding:10px;
-            border:1px solid #D7C4A3;
-            border-radius:10px;
-            margin-bottom:10px;
-        }
-
-        .btn {
-            width:100%;
-            padding:14px;
-            background:#2E7D32;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-weight:600;
-            cursor:pointer;
-            box-shadow:0 3px 0 #1B5E20;
-            margin-top:10px;
-        }
-
-        .cancel-btn {
-            background:#888;
-            box-shadow:0 3px 0 #555;
-        }
     </style>
 </head>
 <body>
@@ -99,168 +57,18 @@
         🏕 ScoutNet
     </div>
 
-    <div>
+    <div style="display:flex; align-items:center; gap:15px;">
         <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
-        <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
+        <a href="profile.html">プロフィール</a>
     </div>
 </nav>
 
 <div class="container">
-    <div class="profile-card">
-
-        <img id="icon" class="icon">
-
-        <!-- display:none を禁止（スマホで files が消えるため） -->
-        <input type="file" id="iconInput" accept="image/*"
-               style="opacity:0; position:absolute; width:1px; height:1px;">
-
-        <div id="profileView">
-            <div class="label">名前</div>
-            <div class="value" id="name"></div>
-
-            <div class="label">メール</div>
-            <div class="value" id="email"></div>
-
-            <div class="label">所属</div>
-            <div class="value" id="team"></div>
-
-            <div class="label">自己紹介</div>
-            <div class="value" id="bio"></div>
-
-            <div class="label">投稿数</div>
-            <div class="value" id="postCount"></div>
-
-            <div class="label">いいねした投稿</div>
-            <div class="value" id="likeCount"></div>
-
-            <button class="btn" id="editBtn">編集する</button>
-        </div>
-
-        <div id="profileEdit" style="display:none;">
-            <button class="btn" id="changeIconBtn">画像を変更</button>
-
-            <input id="editName" class="edit-input" placeholder="名前">
-            <input id="editPref" class="edit-input" placeholder="都道府県">
-            <input id="editTroop" class="edit-input" placeholder="団名">
-            <textarea id="editBio" class="edit-input" placeholder="自己紹介"></textarea>
-
-            <button class="btn" id="saveBtn">保存</button>
-            <button class="btn cancel-btn" id="cancelBtn">キャンセル</button>
-        </div>
-
-    </div>
+    <h2>プロフィール</h2>
+    <p>ここにプロフィール情報を表示</p>
 </div>
-
-<script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "scoutnet12.firebaseapp.com",
-    projectId: "scoutnet12",
-    storageBucket: "scoutnet12.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-/* ログイン確認 */
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
-
-/* Firestore からユーザーデータ取得 */
-db.collection("users").doc(currentUser).get().then(async (doc) => {
-    let userData = doc.data();   // ← ここを let にするのが超重要（保存できない原因）
-
-    const defaultIcon = "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
-
-    document.getElementById("icon").src = userData.iconURL || defaultIcon;
-    document.getElementById("name").textContent = userData.name;
-    document.getElementById("email").textContent = userData.email;
-    document.getElementById("team").textContent = `${userData.prefecture} ${userData.troop}`;
-    document.getElementById("bio").textContent = userData.bio || "（未設定）";
-
-    /* 投稿数 */
-    const postsSnap = await db.collection("posts")
-        .where("createdBy", "==", currentUser)
-        .get();
-    document.getElementById("postCount").textContent = postsSnap.size;
-
-    /* いいね数 */
-    const likesSnap = await db.collection("likes")
-        .where("user", "==", currentUser)
-        .get();
-    document.getElementById("likeCount").textContent = likesSnap.size;
-
-    /* 編集モードへ */
-    document.getElementById("editBtn").onclick = () => {
-        document.getElementById("profileView").style.display = "none";
-        document.getElementById("profileEdit").style.display = "block";
-
-        document.getElementById("editName").value = userData.name;
-        document.getElementById("editPref").value = userData.prefecture;
-        document.getElementById("editTroop").value = userData.troop;
-        document.getElementById("editBio").value = userData.bio || "";
-    };
-
-    /* キャンセル */
-    document.getElementById("cancelBtn").onclick = () => {
-        document.getElementById("profileView").style.display = "block";
-        document.getElementById("profileEdit").style.display = "none";
-    };
-
-    /* アイコン変更ボタン */
-    document.getElementById("changeIconBtn").onclick = () => {
-        document.getElementById("iconInput").click();
-    };
-
-    /* アイコンプレビュー */
-    document.getElementById("iconInput").addEventListener("change", () => {
-        const file = document.getElementById("iconInput").files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                document.getElementById("icon").src = reader.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    /* 保存処理 */
-    document.getElementById("saveBtn").onclick = async () => {
-        const newName = document.getElementById("editName").value;
-        const newPref = document.getElementById("editPref").value;
-        const newTroop = document.getElementById("editTroop").value;
-        const newBio = document.getElementById("editBio").value;
-
-        let newIconURL = userData.iconURL;
-
-        /* アイコン変更 */
-        const file = document.getElementById("iconInput").files[0];
-        if (file) {
-            const iconRef = storage.ref(`icons/${currentUser}.jpg`);
-            await iconRef.put(file);
-            newIconURL = await iconRef.getDownloadURL();
-        }
-
-        /* Firestore 更新 */
-        await db.collection("users").doc(currentUser).update({
-            name: newName,
-            prefecture: newPref,
-            troop: newTroop,
-            bio: newBio,
-            iconURL: newIconURL
-        });
-
-        alert("プロフィールを更新しました");
-        location.reload();
-    };
-});
-</script>
 
 </body>
 </html>
