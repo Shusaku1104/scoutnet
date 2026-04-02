@@ -31,6 +31,16 @@
             z-index:100;
         }
 
+        /* 🔥 横スクロール対応（全ページ共通） */
+        nav div:last-child {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        nav div:last-child a {
+            display:inline-block;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
@@ -82,6 +92,7 @@
             font-weight:700;
             margin-top:20px;
             cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
         }
     </style>
 </head>
@@ -95,6 +106,7 @@
 
     <div style="display:flex; align-items:center; gap:15px;">
         <a href="home.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
@@ -125,89 +137,3 @@
         <button id="postBtn">投稿する</button>
     </div>
 </div>
-
-<script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "scoutnet12.firebaseapp.com",
-    projectId: "scoutnet12",
-    storageBucket: "scoutnet12.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-/* ログイン確認 */
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
-
-/* 投稿処理 */
-document.getElementById("postBtn").addEventListener("click", async () => {
-    const title = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value.trim();
-    const category = document.getElementById("category").value;
-
-    if (!title || !description) {
-        alert("タイトルと説明文は必須です");
-        return;
-    }
-
-    const imageFiles = document.getElementById("images").files;
-    const otherFiles = document.getElementById("files").files;
-
-    const imageURLs = [];
-    const fileURLs = [];
-
-    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
-
-    for (let file of imageFiles) {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-        await fileRef.put(file);
-        const url = await fileRef.getDownloadURL();
-        imageURLs.push(url);
-    }
-
-    for (let file of otherFiles) {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-        await fileRef.put(file);
-        const url = await fileRef.getDownloadURL();
-        fileURLs.push(url);
-    }
-
-    const postRef = await db.collection("posts").add({
-        title,
-        description,
-        category,
-        images: imageURLs,
-        files: fileURLs,
-        createdBy: currentUser,
-        createdAt: Date.now()
-    });
-
-    const usersSnap = await db.collection("users").get();
-    const postId = postRef.id;
-
-    usersSnap.forEach(u => {
-        const uid = u.id;
-        if (uid === currentUser) return;
-
-        db.collection("notifications").add({
-            to: uid,
-            from: currentUser,
-            type: "newpost",
-            postId,
-            createdAt: Date.now()
-        });
-    });
-
-    alert("投稿しました！");
-    location.href = "home.html";
-});
-</script>
-
-</body>
-</html>
