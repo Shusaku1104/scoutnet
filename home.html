@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet - 投稿</title>
+    <title>ScoutNet - ホーム</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase SDK -->
+    <!-- Firebase 8系（スマホ安定版） -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
         body {
@@ -48,54 +47,73 @@
             border:none;
         }
 
+        #categoryMenu {
+            position:absolute;
+            right:20px;
+            top:60px;
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:12px;
+            box-shadow:0 4px 0 #D7C4A3;
+            display:none;
+            width:150px;
+        }
+
+        .category-item {
+            padding:12px;
+            cursor:pointer;
+            border-bottom:1px solid #EEE;
+        }
+
+        .category-item:hover {
+            background:#F1F8E9;
+        }
+
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
 
-        .form-box {
+        .post {
             background:white;
             border:2px solid #D7C4A3;
             border-radius:16px;
-            padding:20px;
+            padding:16px;
+            margin-bottom:20px;
             box-shadow:0 4px 0 #D7C4A3;
-        }
-
-        label {
-            font-weight:600;
-            margin-top:12px;
-            display:block;
-        }
-
-        input, textarea, select {
-            width:100%;
-            padding:10px;
-            margin-top:6px;
-            border-radius:8px;
-            border:1px solid #CCC;
-            font-size:15px;
-        }
-
-        textarea {
-            height:120px;
-        }
-
-        #postBtn {
-            width:100%;
-            background:#2E7D32;
-            color:white;
-            padding:12px;
-            border:none;
-            border-radius:10px;
-            font-size:17px;
-            font-weight:700;
-            margin-top:20px;
             cursor:pointer;
+        }
+
+        .post img {
+            width:100%;
+            border-radius:12px;
+            margin-bottom:10px;
+        }
+
+        .title {
+            font-size:20px;
+            font-weight:600;
+            margin-bottom:8px;
+        }
+
+        .category-tag {
+            display:inline-block;
+            background:#E8F5E9;
+            color:#2E7D32;
+            padding:4px 10px;
+            border-radius:8px;
+            font-size:13px;
+            margin-bottom:6px;
+            border:1px solid #A5D6A7;
+        }
+
+        .desc {
+            font-size:15px;
+            margin-bottom:10px;
         }
     </style>
 </head>
-
 <body>
 
 <nav>
@@ -104,37 +122,23 @@
     </div>
 
     <div style="display:flex; align-items:center; gap:15px;">
-        <button id="categoryBtn" disabled style="opacity:0.5; cursor:default;">カテゴリ</button>
-        <a href="home.html">ホーム</a>
+        <button id="categoryBtn">カテゴリ ▼</button>
+
+        <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
 </nav>
 
+<div id="categoryMenu">
+    <div class="category-item" data-cat="すべて">すべて</div>
+    <div class="category-item" data-cat="アウトドア">アウトドア</div>
+    <div class="category-item" data-cat="インドア">インドア</div>
+    <div class="category-item" data-cat="奉仕">奉仕</div>
+</div>
+
 <div class="container">
-    <div class="form-box">
-
-        <label>タイトル</label>
-        <input type="text" id="title">
-
-        <label>説明文</label>
-        <textarea id="description"></textarea>
-
-        <label>カテゴリ</label>
-        <select id="category">
-            <option value="アウトドア">アウトドア</option>
-            <option value="インドア">インドア</option>
-            <option value="奉仕">奉仕</option>
-        </select>
-
-        <label>画像（複数可）</label>
-        <input type="file" id="images" accept="image/*" multiple>
-
-        <label>その他ファイル（複数可）</label>
-        <input type="file" id="files" multiple>
-
-        <button id="postBtn">投稿する</button>
-    </div>
+    <div id="postList"></div>
 </div>
 
 <script>
@@ -150,74 +154,87 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 /* ログイン確認 */
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
+const user = localStorage.getItem("currentUser");
+if (!user) location.href = "login.html";
 
-/* 投稿処理 */
-document.getElementById("postBtn").addEventListener("click", async () => {
-    const title = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value.trim();
-    const category = document.getElementById("category").value;
+/* UI 要素 */
+const postList = document.getElementById("postList");
+const categoryBtn = document.getElementById("categoryBtn");
+const categoryMenu = document.getElementById("categoryMenu");
 
-    if (!title || !description) {
-        alert("タイトルと説明文は必須です");
-        return;
-    }
+let currentCategory = "すべて";
 
-    const imageFiles = document.getElementById("images").files;
-    const otherFiles = document.getElementById("files").files;
+/* カテゴリメニュー表示切替 */
+categoryBtn.addEventListener("click", () => {
+    categoryMenu.style.display =
+        categoryMenu.style.display === "block" ? "none" : "block";
+});
 
-    const imageURLs = [];
-    const fileURLs = [];
-
-    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
-
-    for (let file of imageFiles) {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-        await fileRef.put(file);
-        const url = await fileRef.getDownloadURL();
-        imageURLs.push(url);
-    }
-
-    for (let file of otherFiles) {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-        await fileRef.put(file);
-        const url = await fileRef.getDownloadURL();
-        fileURLs.push(url);
-    }
-
-    const postRef = await db.collection("posts").add({
-        title,
-        description,
-        category,
-        images: imageURLs,
-        files: fileURLs,
-        createdBy: currentUser,
-        createdAt: Date.now()
+/* カテゴリ選択 */
+document.querySelectorAll(".category-item").forEach(item => {
+    item.addEventListener("click", () => {
+        currentCategory = item.dataset.cat;
+        categoryMenu.style.display = "none";
+        loadPosts();
     });
+});
 
-    const usersSnap = await db.collection("users").get();
-    const postId = postRef.id;
+/* 投稿読み込み（カテゴリ対応） */
+function loadPosts() {
+    postList.innerHTML = "";
 
-    usersSnap.forEach(u => {
-        const uid = u.id;
-        if (uid === currentUser) return;
+    let ref = db.collection("posts").orderBy("createdAt", "desc");
 
-        db.collection("notifications").add({
-            to: uid,
-            from: currentUser,
-            type: "newpost",
-            postId,
-            createdAt: Date.now()
+    if (currentCategory !== "すべて") {
+        ref = db.collection("posts")
+            .where("category", "==", currentCategory)
+            .orderBy("createdAt", "desc");
+    }
+
+    ref.onSnapshot(snapshot => {
+        postList.innerHTML = "";
+
+        snapshot.forEach(doc => {
+            const post = doc.data();
+            const id = doc.id;
+
+            const div = document.createElement("div");
+            div.className = "post";
+
+            if (post.images && post.images.length > 0) {
+                const img = document.createElement("img");
+                img.src = post.images[0];
+                div.appendChild(img);
+            }
+
+            const tag = document.createElement("div");
+            tag.className = "category-tag";
+            tag.textContent = post.category;
+            div.appendChild(tag);
+
+            const title = document.createElement("div");
+            title.className = "title";
+            title.textContent = post.title;
+
+            const desc = document.createElement("div");
+            desc.className = "desc";
+            desc.textContent = post.description;
+
+            div.appendChild(title);
+            div.appendChild(desc);
+
+            div.addEventListener("click", () => {
+                location.href = "post.html?id=" + id;
+            });
+
+            postList.appendChild(div);
         });
     });
+}
 
-    alert("投稿しました！");
-    location.href = "home.html";
-});
+loadPosts();
 </script>
 
 </body>
