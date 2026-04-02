@@ -2,122 +2,212 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>新規投稿</title>
+    <title>ScoutNet - 投稿</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
+        }
+
+        nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:12px 20px;
+            background:white;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            margin-left:15px;
+        }
+
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
+        }
+
+        .form-box {
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:20px;
+            box-shadow:0 4px 0 #D7C4A3;
+        }
+
+        label {
+            font-weight:600;
+            margin-top:12px;
+            display:block;
+        }
+
+        input, textarea, select {
+            width:100%;
+            padding:10px;
+            margin-top:6px;
+            border-radius:8px;
+            border:1px solid #CCC;
+            font-size:15px;
+        }
+
+        textarea {
+            height:120px;
+        }
+
+        #postBtn {
+            width:100%;
+            background:#2E7D32;
+            color:white;
+            padding:12px;
+            border:none;
+            border-radius:10px;
+            font-size:17px;
+            font-weight:700;
+            margin-top:20px;
+            cursor:pointer;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>新規投稿</h1>
 
-    <label>タイトル</label><br>
-    <input type="text" id="title"><br><br>
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
 
-    <label>説明文</label><br>
-    <textarea id="description"></textarea><br><br>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <a href="home.html">ホーム</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
 
-    <label>カテゴリ</label><br>
-    <select id="category">
-        <option value="アウトドア">アウトドア</option>
-        <option value="インドア">インドア</option>
-        <option value="奉仕">奉仕</option>
-    </select><br><br>
+<div class="container">
+    <div class="form-box">
 
-    <label>画像</label><br>
-    <input type="file" id="images" accept="image/*" multiple><br><br>
+        <label>タイトル</label>
+        <input type="text" id="title">
 
-    <label>その他ファイル</label><br>
-    <input type="file" id="files" multiple><br><br>
+        <label>説明文</label>
+        <textarea id="description"></textarea>
 
-    <button id="postBtn">投稿する</button>
+        <label>カテゴリ</label>
+        <select id="category">
+            <option value="アウトドア">アウトドア</option>
+            <option value="インドア">インドア</option>
+            <option value="奉仕">奉仕</option>
+        </select>
 
-    <!-- 周作の JavaScript -->
-    <script>
-    /* Firebase 設定（ScoutNet12 の値に差し替え） */
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "scoutnet12.firebaseapp.com",
-        projectId: "scoutnet12",
-        storageBucket: "scoutnet12.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+        <label>画像（複数可）</label>
+        <input type="file" id="images" accept="image/*" multiple>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+        <label>その他ファイル（複数可）</label>
+        <input type="file" id="files" multiple>
 
-    /* ログイン確認 */
-    const currentUser = localStorage.getItem("currentUser");
-    if (!currentUser) location.href = "login.html";
+        <button id="postBtn">投稿する</button>
+    </div>
+</div>
 
-    /* 投稿処理 */
-    document.getElementById("postBtn").addEventListener("click", async () => {
-        const title = document.getElementById("title").value.trim();
-        const description = document.getElementById("description").value.trim();
-        const category = document.getElementById("category").value;
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
 
-        if (!title || !description) {
-            alert("タイトルと説明文は必須です");
-            return;
-        }
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-        const imageFiles = document.getElementById("images").files;
-        const otherFiles = document.getElementById("files").files;
+/* ログイン確認 */
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
 
-        const imageURLs = [];
-        const fileURLs = [];
+/* 投稿処理 */
+document.getElementById("postBtn").addEventListener("click", async () => {
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const category = document.getElementById("category").value;
 
-        const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
+    if (!title || !description) {
+        alert("タイトルと説明文は必須です");
+        return;
+    }
 
-        for (let file of imageFiles) {
-            const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-            await fileRef.put(file);
-            const url = await fileRef.getDownloadURL();
-            imageURLs.push(url);
-        }
+    const imageFiles = document.getElementById("images").files;
+    const otherFiles = document.getElementById("files").files;
 
-        for (let file of otherFiles) {
-            const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
-            await fileRef.put(file);
-            const url = await fileRef.getDownloadURL();
-            fileURLs.push(url);
-        }
+    const imageURLs = [];
+    const fileURLs = [];
 
-        const postRef = await db.collection("posts").add({
-            title,
-            description,
-            category,
-            images: imageURLs,
-            files: fileURLs,
-            createdBy: currentUser,
+    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
+
+    for (let file of imageFiles) {
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        await fileRef.put(file);
+        const url = await fileRef.getDownloadURL();
+        imageURLs.push(url);
+    }
+
+    for (let file of otherFiles) {
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        await fileRef.put(file);
+        const url = await fileRef.getDownloadURL();
+        fileURLs.push(url);
+    }
+
+    const postRef = await db.collection("posts").add({
+        title,
+        description,
+        category,
+        images: imageURLs,
+        files: fileURLs,
+        createdBy: currentUser,
+        createdAt: Date.now()
+    });
+
+    const usersSnap = await db.collection("users").get();
+    const postId = postRef.id;
+
+    usersSnap.forEach(u => {
+        const uid = u.id;
+        if (uid === currentUser) return;
+
+        db.collection("notifications").add({
+            to: uid,
+            from: currentUser,
+            type: "newpost",
+            postId,
             createdAt: Date.now()
         });
-
-        const usersSnap = await db.collection("users").get();
-        const postId = postRef.id;
-
-        usersSnap.forEach(u => {
-            const uid = u.id;
-            if (uid === currentUser) return;
-
-            db.collection("notifications").add({
-                to: uid,
-                from: currentUser,
-                type: "newpost",
-                postId,
-                createdAt: Date.now()
-            });
-        });
-
-        alert("投稿しました！");
-        location.href = "home.html";
     });
-    </script>
+
+    alert("投稿しました！");
+    location.href = "home.html";
+});
+</script>
 
 </body>
 </html>
