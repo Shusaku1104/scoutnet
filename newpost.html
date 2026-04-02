@@ -31,7 +31,6 @@
             z-index:100;
         }
 
-        /* 横スクロール対応 */
         nav div:last-child {
             overflow-x: auto;
             white-space: nowrap;
@@ -81,7 +80,6 @@
             height:120px;
         }
 
-        /* 🔥 投稿ボタンを最前面にして押せるようにする */
         #postBtn {
             width:100%;
             background:#2E7D32;
@@ -94,15 +92,6 @@
             margin-top:20px;
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
-            position:relative;
-            z-index:10;
-        }
-
-        /* 🔥 file input の透明巨大化バグ対策 */
-        .file-input {
-            position:relative;
-            z-index:5;
-            display:block;
         }
     </style>
 </head>
@@ -139,17 +128,17 @@
         </select>
 
         <label>画像（複数可）</label>
-        <input type="file" id="images" accept="image/*" multiple class="file-input">
+        <input type="file" id="images" accept="image/*" multiple>
 
         <label>その他ファイル（複数可）</label>
-        <input type="file" id="files" multiple class="file-input">
+        <input type="file" id="files" multiple>
 
         <button id="postBtn">投稿する</button>
     </div>
 </div>
 
 <script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
+/* Firebase 設定 */
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "scoutnet12.firebaseapp.com",
@@ -167,6 +156,9 @@ const storage = firebase.storage();
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
+/* ランダムファイル名（日本語対策） */
+const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now();
+
 /* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
     const title = document.getElementById("title").value.trim();
@@ -181,25 +173,23 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageFiles = document.getElementById("images").files;
     const otherFiles = document.getElementById("files").files;
 
-    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
-
-    /* 🔥 画像アップロード（並列） */
+    /* 画像アップロード */
     const uploadImageTasks = [...imageFiles].map(async (file) => {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
         return await fileRef.getDownloadURL();
     });
     const imageURLs = await Promise.all(uploadImageTasks);
 
-    /* 🔥 ファイルアップロード（並列） */
+    /* ファイルアップロード */
     const uploadFileTasks = [...otherFiles].map(async (file) => {
-        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
         return await fileRef.getDownloadURL();
     });
     const fileURLs = await Promise.all(uploadFileTasks);
 
-    /* Firestore に投稿保存 */
+    /* Firestore 保存 */
     const postRef = await db.collection("posts").add({
         title,
         description,
@@ -210,7 +200,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: Date.now()
     });
 
-    /* 通知処理 */
+    /* 通知 */
     const usersSnap = await db.collection("users").get();
     const postId = postRef.id;
 
