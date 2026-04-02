@@ -37,6 +37,11 @@
             margin-left:15px;
         }
 
+        #logoutBtn {
+            color:#B71C1C;
+            font-weight:700;
+        }
+
         #categoryBtn {
             background:#2E7D32;
             color:white;
@@ -127,6 +132,7 @@
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
+        <a href="#" id="logoutBtn">ログアウト</a>
     </div>
 </nav>
 
@@ -158,6 +164,13 @@ const db = firebase.firestore();
 /* ログイン確認 */
 const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
+
+/* ログアウト処理 */
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("currentUser");
+    alert("ログアウトしました");
+    location.href = "login.html";
+});
 
 /* UI 要素 */
 const postList = document.getElementById("postList");
