@@ -30,16 +30,23 @@
             z-index:100;
         }
 
+        /* 🔥 追加：右側メニューを横スクロール可能にする */
+        nav div:last-child {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        nav div:last-child a,
+        nav div:last-child button {
+            display: inline-block;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
             margin-left:15px;
-        }
-
-        #logoutBtn {
-            color:#B71C1C;
-            font-weight:700;
         }
 
         #categoryBtn {
@@ -132,7 +139,6 @@
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
-        <a href="#" id="logoutBtn">ログアウト</a>
     </div>
 </nav>
 
@@ -164,13 +170,6 @@ const db = firebase.firestore();
 /* ログイン確認 */
 const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
-
-/* ログアウト処理 */
-document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("currentUser");
-    alert("ログアウトしました");
-    location.href = "login.html";
-});
 
 /* UI 要素 */
 const postList = document.getElementById("postList");
