@@ -31,7 +31,7 @@
             z-index:100;
         }
 
-        /* 🔥 横スクロール対応（全ページ共通） */
+        /* 横スクロール対応 */
         nav div:last-child {
             overflow-x: auto;
             white-space: nowrap;
@@ -137,3 +137,90 @@
         <button id="postBtn">投稿する</button>
     </div>
 </div>
+
+<script>
+/* Firebase 設定（ScoutNet12 の値に差し替え） */
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "scoutnet12.firebaseapp.com",
+    projectId: "scoutnet12",
+    storageBucket: "scoutnet12.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+/* ログイン確認 */
+const currentUser = localStorage.getItem("currentUser");
+if (!currentUser) location.href = "login.html";
+
+/* 投稿処理 */
+document.getElementById("postBtn").addEventListener("click", async () => {
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const category = document.getElementById("category").value;
+
+    if (!title || !description) {
+        alert("タイトルと説明文は必須です");
+        return;
+    }
+
+    const imageFiles = document.getElementById("images").files;
+    const otherFiles = document.getElementById("files").files;
+
+    const uniqueId = () => Math.random().toString(36).substring(2) + Date.now();
+
+    /* 🔥 画像アップロード（並列） */
+    const uploadImageTasks = [...imageFiles].map(async (file) => {
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        await fileRef.put(file);
+        return await fileRef.getDownloadURL();
+    });
+    const imageURLs = await Promise.all(uploadImageTasks);
+
+    /* 🔥 ファイルアップロード（並列） */
+    const uploadFileTasks = [...otherFiles].map(async (file) => {
+        const fileRef = storage.ref(`posts/${uniqueId()}_${file.name}`);
+        await fileRef.put(file);
+        return await fileRef.getDownloadURL();
+    });
+    const fileURLs = await Promise.all(uploadFileTasks);
+
+    /* Firestore に投稿保存 */
+    const postRef = await db.collection("posts").add({
+        title,
+        description,
+        category,
+        images: imageURLs,
+        files: fileURLs,
+        createdBy: currentUser,
+        createdAt: Date.now()
+    });
+
+    /* 通知処理 */
+    const usersSnap = await db.collection("users").get();
+    const postId = postRef.id;
+
+    usersSnap.forEach(u => {
+        const uid = u.id;
+        if (uid === currentUser) return;
+
+        db.collection("notifications").add({
+            to: uid,
+            from: currentUser,
+            type: "newpost",
+            postId,
+            createdAt: Date.now()
+        });
+    });
+
+    alert("投稿しました！");
+    location.href = "home.html";
+});
+</script>
+
+</body>
+</html>
