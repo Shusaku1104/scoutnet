@@ -143,7 +143,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",   // ← 修正済み！
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -173,7 +173,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         return;
     }
 
-    /* ② ここから元の投稿処理 */
+    /* ② タイトル・説明文チェック */
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
@@ -186,7 +186,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageFiles = document.getElementById("images").files;
     const otherFiles = document.getElementById("files").files;
 
-    /* 画像アップロード */
+    /* ③ 画像アップロード */
     const uploadImageTasks = [...imageFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -194,7 +194,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const imageURLs = await Promise.all(uploadImageTasks);
 
-    /* ファイルアップロード */
+    /* ④ ファイルアップロード */
     const uploadFileTasks = [...otherFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -202,7 +202,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const fileURLs = await Promise.all(uploadFileTasks);
 
-    /* Firestore 保存 */
+    /* ⑤ Firestore 保存 */
     const postRef = await db.collection("posts").add({
         title,
         description,
@@ -213,12 +213,12 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: Date.now()
     });
 
-    /* ③ 投稿成功したら postCount を +1 */
+    /* ⑥ 投稿成功したら postCount を +1 */
     await userRef.update({
         postCount: firebase.firestore.FieldValue.increment(1)
     });
 
-    /* 通知 */
+    /* ⑦ 通知 */
     const usersSnap = await db.collection("users").get();
     const postId = postRef.id;
 
