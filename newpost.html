@@ -161,6 +161,19 @@ const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now(
 
 /* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
+
+    /* ① 投稿数チェック（上限200） */
+    const userRef = db.collection("users").doc(currentUser);
+    const userSnap = await userRef.get();
+
+    const postCount = userSnap.data().postCount || 0;
+
+    if (postCount >= 200) {
+        alert("投稿上限の200件に達しています！");
+        return;
+    }
+
+    /* ② ここから元の投稿処理 */
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
@@ -198,6 +211,11 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         files: fileURLs,
         createdBy: currentUser,
         createdAt: Date.now()
+    });
+
+    /* ③ 投稿成功したら postCount を +1 */
+    await userRef.update({
+        postCount: firebase.firestore.FieldValue.increment(1)
     });
 
     /* 通知 */
