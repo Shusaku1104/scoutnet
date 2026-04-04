@@ -26,11 +26,9 @@
             z-index:100;
         }
 
-        /* 横スクロール対応 */
         nav div:last-child {
             overflow-x: auto;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
         }
         nav div:last-child a {
             display:inline-block;
@@ -47,6 +45,31 @@
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
+        }
+
+        .notice-card {
+            background:white;
+            padding:15px;
+            margin-bottom:12px;
+            border-radius:10px;
+            border:1px solid #D7C4A3;
+            cursor:pointer;
+        }
+
+        .notice-icon {
+            font-size:22px;
+            margin-right:10px;
+        }
+
+        .notice-row {
+            display:flex;
+            align-items:center;
+        }
+
+        .notice-time {
+            font-size:12px;
+            color:#6d6d6d;
+            margin-top:5px;
         }
     </style>
 </head>
@@ -67,8 +90,90 @@
 
 <div class="container">
     <h2>通知一覧</h2>
-    <p>ここに通知を表示</p>
+    <div id="notifications"></div>
 </div>
+
+<!-- Firebase 読み込み -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+<script>
+    // 🔻 周作がここに FirebaseConfig を入れる
+    const firebaseConfig = {
+        // ここに周作の FirebaseConfig を貼る
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 🔻 時間を「○分前」みたいにする関数
+    function timeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+
+        const minutes = Math.floor(diff / 60000);
+        if (minutes < 1) return "たった今";
+        if (minutes < 60) return minutes + "分前";
+
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return hours + "時間前";
+
+        const days = Math.floor(hours / 24);
+        return days + "日前";
+    }
+
+    // 🔻 通知を読み込む
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            alert("ログインしてください");
+            location.href = "login.html";
+            return;
+        }
+
+        db.collection("notifications")
+            .where("to", "==", user.uid)
+            .orderBy("createdAt", "desc")
+            .onSnapshot(snapshot => {
+                const box = document.getElementById("notifications");
+                box.innerHTML = "";
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+
+                    let icon = "";
+                    let message = "";
+
+                    if (data.type === "like") {
+                        icon = "❤️";
+                        message = `${data.from} さんがあなたの投稿にいいねしました`;
+                    }
+                    if (data.type === "comment") {
+                        icon = "💬";
+                        message = `${data.from} さんがあなたの投稿にコメントしました`;
+                    }
+
+                    const card = document.createElement("div");
+                    card.className = "notice-card";
+
+                    card.innerHTML = `
+                        <div class="notice-row">
+                            <div class="notice-icon">${icon}</div>
+                            <div>${message}</div>
+                        </div>
+                        <div class="notice-time">${timeAgo(data.createdAt)}</div>
+                    `;
+
+                    card.onclick = () => {
+                        location.href = `post.html?id=${data.postId}`;
+                    };
+
+                    box.appendChild(card);
+                });
+            });
+    });
+</script>
 
 </body>
 </html>
