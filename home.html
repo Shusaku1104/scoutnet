@@ -58,9 +58,10 @@
             border:none;
         }
 
+        /* ← 修正済み：右側に重ならないように left に変更 */
         #categoryMenu {
             position:absolute;
-            right:20px;
+            left:20px;
             top:60px;
             background:white;
             border:2px solid #D7C4A3;
@@ -68,6 +69,8 @@
             box-shadow:0 4px 0 #D7C4A3;
             display:none;
             width:150px;
+            pointer-events:none; /* ← 初期はクリック無効 */
+            z-index:200;
         }
 
         .category-item {
@@ -183,18 +186,21 @@ let currentPage = 1;
 const perPage = 10;
 let totalPages = 1;
 
-/* カテゴリメニュー */
+/* カテゴリメニュー開閉 */
 categoryBtn.addEventListener("click", () => {
-    categoryMenu.style.display =
-        categoryMenu.style.display === "block" ? "none" : "block";
+    const isOpen = categoryMenu.style.display === "block";
+
+    categoryMenu.style.display = isOpen ? "none" : "block";
+    categoryMenu.style.pointerEvents = isOpen ? "none" : "auto"; // ← 透明壁対策
 });
 
 /* カテゴリ選択 */
 document.querySelectorAll(".category-item").forEach(item => {
     item.addEventListener("click", () => {
         currentCategory = item.dataset.cat;
-        currentPage = 1; // ← ページ番号リセット
+        currentPage = 1;
         categoryMenu.style.display = "none";
+        categoryMenu.style.pointerEvents = "none";
         loadPosts();
     });
 });
@@ -224,7 +230,7 @@ function renderPagination() {
     }
 }
 
-/* 投稿読み込み（ページ番号対応） */
+/* 投稿読み込み */
 async function loadPosts() {
     postList.innerHTML = "";
 
@@ -234,7 +240,6 @@ async function loadPosts() {
         ref = ref.where("category", "==", currentCategory);
     }
 
-    // 全件数
     const totalSnap = await ref.get();
     const totalCount = totalSnap.size;
 
