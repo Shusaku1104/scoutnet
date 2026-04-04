@@ -26,12 +26,9 @@
             z-index:100;
         }
 
+        /* 透明の壁削除 */
         nav div:last-child {
-            overflow-x: auto;
             white-space: nowrap;
-        }
-        nav div:last-child a {
-            display:inline-block;
         }
 
         nav a {
@@ -80,13 +77,13 @@
         🏕 ScoutNet
     </div>
 
-   <div style="display:flex; align-items:center; gap:15px;">
-    <a href="home.html">ホーム</a>
-    <a href="about.html">このサイトについて</a>
-    <a href="newpost.html">投稿する</a>
-    <a href="profile.html">プロフィール</a>
-    <a href="notifications.html">🔔 通知</a>
-</div>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <a href="home.html">ホーム</a>
+        <a href="about.html">このサイトについて</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
 </nav>
 
 <div class="container">
@@ -94,91 +91,97 @@
     <div id="notifications"></div>
 </div>
 
-<!-- Firebase 読み込み -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<!-- Firebase v8 に統一 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
-    // 🔻 周作がここに FirebaseConfig を入れる
+/* Firebase 設定（統一版） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",   // ← 修正済み！
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    // 🔻 時間を「○分前」みたいにする関数
-    function timeAgo(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
+/* 時間を「○分前」に変換 */
+function timeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
 
-        const minutes = Math.floor(diff / 60000);
-        if (minutes < 1) return "たった今";
-        if (minutes < 60) return minutes + "分前";
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return "たった今";
+    if (minutes < 60) return minutes + "分前";
 
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return hours + "時間前";
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "時間前";
 
-        const days = Math.floor(hours / 24);
-        return days + "日前";
+    const days = Math.floor(hours / 24);
+    return days + "日前";
+}
+
+/* 通知読み込み */
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        alert("ログインしてください");
+        location.href = "login.html";
+        return;
     }
 
-    // 🔻 通知を読み込む
-    auth.onAuthStateChanged(user => {
-        if (!user) {
-            alert("ログインしてください");
-            location.href = "login.html";
-            return;
-        }
+    db.collection("notifications")
+        .where("to", "==", user.uid)
+        .orderBy("createdAt", "desc")
+        .onSnapshot(async (snapshot) => {
 
-        db.collection("notifications")
-            .where("to", "==", user.uid)
-            .orderBy("createdAt", "desc")
-            .onSnapshot(snapshot => {
-                const box = document.getElementById("notifications");
-                box.innerHTML = "";
+            const box = document.getElementById("notifications");
+            box.innerHTML = "";
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
+            for (const doc of snapshot.docs) {
+                const data = doc.data();
 
-                    let icon = "";
-                    let message = "";
+                /* from のユーザー名取得 */
+                const userSnap = await db.collection("users").doc(data.from).get();
+                const fromName = userSnap.exists ? userSnap.data().name : data.from;
 
-                    if (data.type === "like") {
-                        icon = "❤️";
-                        message = `${data.from} さんがあなたの投稿にいいねしました`;
-                    }
-                    if (data.type === "comment") {
-                        icon = "💬";
-                        message = `${data.from} さんがあなたの投稿にコメントしました`;
-                    }
+                let icon = "";
+                let message = "";
 
-                    const card = document.createElement("div");
-                    card.className = "notice-card";
+                if (data.type === "like") {
+                    icon = "❤️";
+                    message = `${fromName} さんがあなたの投稿にいいねしました`;
+                }
 
-                    card.innerHTML = `
-                        <div class="notice-row">
-                            <div class="notice-icon">${icon}</div>
-                            <div>${message}</div>
-                        </div>
-                        <div class="notice-time">${timeAgo(data.createdAt)}</div>
-                    `;
+                if (data.type === "comment") {
+                    icon = "💬";
+                    message = `${fromName} さんがあなたの投稿にコメントしました`;
+                }
 
-                    card.onclick = () => {
-                        location.href = `post.html?id=${data.postId}`;
-                    };
+                const card = document.createElement("div");
+                card.className = "notice-card";
 
-                    box.appendChild(card);
-                });
-            });
-    });
+                card.innerHTML = `
+                    <div class="notice-row">
+                        <div class="notice-icon">${icon}</div>
+                        <div>${message}</div>
+                    </div>
+                    <div class="notice-time">${timeAgo(data.createdAt)}</div>
+                `;
+
+                card.onclick = () => {
+                    location.href = `post.html?id=${data.postId}`;
+                };
+
+                box.appendChild(card);
+            }
+        });
+});
 </script>
 
 </body>
