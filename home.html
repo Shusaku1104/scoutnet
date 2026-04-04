@@ -30,15 +30,9 @@
             z-index:100;
         }
 
+        /* 透明の壁を完全削除 */
         nav div:last-child {
-            overflow-x: auto;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        nav div:last-child a,
-        nav div:last-child button {
-            display: inline-block;
         }
 
         nav a {
@@ -58,7 +52,6 @@
             border:none;
         }
 
-        /* ← 修正済み：右側に重ならないように left に変更 */
         #categoryMenu {
             position:absolute;
             left:20px;
@@ -69,7 +62,7 @@
             box-shadow:0 4px 0 #D7C4A3;
             display:none;
             width:150px;
-            pointer-events:none; /* ← 初期はクリック無効 */
+            pointer-events:none;
             z-index:200;
         }
 
@@ -153,18 +146,16 @@
 
 <div class="container">
     <div id="postList"></div>
-
-    <!-- ▼ ページ番号 -->
     <div id="pagination" style="text-align:center; margin:20px 0;"></div>
 </div>
 
 <script>
-/* Firebase 設定 */
+/* Firebase 設定（Storage 修正版と同じプロジェクト） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",   // ← 修正済み！
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -189,9 +180,8 @@ let totalPages = 1;
 /* カテゴリメニュー開閉 */
 categoryBtn.addEventListener("click", () => {
     const isOpen = categoryMenu.style.display === "block";
-
     categoryMenu.style.display = isOpen ? "none" : "block";
-    categoryMenu.style.pointerEvents = isOpen ? "none" : "auto"; // ← 透明壁対策
+    categoryMenu.style.pointerEvents = isOpen ? "none" : "auto";
 });
 
 /* カテゴリ選択 */
@@ -244,7 +234,6 @@ async function loadPosts() {
     const totalCount = totalSnap.size;
 
     totalPages = Math.ceil(totalCount / perPage);
-
     renderPagination();
 
     const startIndex = (currentPage - 1) * perPage;
