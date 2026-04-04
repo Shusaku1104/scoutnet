@@ -66,7 +66,7 @@
 <div class="container">
     <h2>ScoutNet 新規登録</h2>
 
-    <input type="text" id="email" placeholder="メールアドレス">
+    <input type="email" id="email" placeholder="メールアドレス（例: example@gmail.com）">
     <input type="password" id="password" placeholder="パスワード（6文字以上）">
     <input type="password" id="password2" placeholder="パスワード（確認）">
 
@@ -78,7 +78,7 @@
 </div>
 
 <script>
-/* Firebase 設定（周作専用） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -113,13 +113,14 @@ document.getElementById("signupBtn").onclick = async () => {
     }
 
     try {
-        // ① Authentication にユーザー作成
+        // Firebase Authentication にユーザー作成
         const userCredential = await auth.createUserWithEmailAndPassword(email, pw);
         const uid = userCredential.user.uid;
 
-        // ② Firestore に UID を使ってユーザーデータ作成
+        // Firestore にユーザーデータ作成
         await db.collection("users").doc(uid).set({
-            name: email,
+            email: email,
+            name: email.split("@")[0], // 初期表示名はメールの@前
             bio: "",
             iconURL: "",
             prefecture: "",
