@@ -31,13 +31,9 @@
             z-index:100;
         }
 
+        /* 透明の壁を削除 */
         nav div:last-child {
-            overflow-x: auto;
             white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-        nav div:last-child a {
-            display:inline-block;
         }
 
         nav a {
@@ -227,12 +223,12 @@
 </div>
 
 <script>
-/* Firebase 設定（周作専用・統一版） */
+/* Firebase 設定（修正版） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",   // ← 修正！
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -349,19 +345,24 @@ document.getElementById("likeBtn").onclick = async () => {
 /* 💬 コメント読み込み */
 const commentsRef = postRef.collection("comments").orderBy("createdAt", "asc");
 
-commentsRef.onSnapshot((snapshot) => {
+commentsRef.onSnapshot(async (snapshot) => {
     const commentsDiv = document.getElementById("comments");
     commentsDiv.innerHTML = "";
 
-    snapshot.forEach((docSnap) => {
+    for (const docSnap of snapshot.docs) {
         const c = docSnap.data();
+
+        /* ユーザー名取得 */
+        const userSnap = await db.collection("users").doc(c.user).get();
+        const userName = userSnap.exists ? userSnap.data().name : c.user;
+
         commentsDiv.innerHTML += `
             <div class="comment">
-                <div class="comment-user">${c.user}</div>
+                <div class="comment-user">${userName}</div>
                 <div>${c.text}</div>
             </div>
         `;
-    });
+    }
 });
 
 /* 💬 コメント送信 */
