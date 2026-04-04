@@ -31,14 +31,7 @@
             z-index:100;
         }
 
-        nav div:last-child {
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-        }
-        nav div:last-child a {
-            display:inline-block;
-        }
+        /* ← これが原因だったので削除済み */
 
         nav a {
             color:#4E342E;
@@ -103,13 +96,13 @@
         🏕 ScoutNet
     </div>
 
-   <div style="display:flex; align-items:center; gap:15px;">
-    <a href="home.html">ホーム</a>
-    <a href="about.html">このサイトについて</a>
-    <a href="newpost.html">投稿する</a>
-    <a href="profile.html">プロフィール</a>
-    <a href="notifications.html">🔔 通知</a>
-</div>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <a href="home.html">ホーム</a>
+        <a href="about.html">このサイトについて</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
 </nav>
 
 <div class="container">
@@ -163,7 +156,6 @@ const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now(
 /* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
 
-    /* ① 投稿数チェック（上限200） */
     const userRef = db.collection("users").doc(currentUser);
     const userSnap = await userRef.get();
 
@@ -174,7 +166,6 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         return;
     }
 
-    /* ② 入力チェック */
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
@@ -187,7 +178,6 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageFiles = document.getElementById("images").files;
     const otherFiles = document.getElementById("files").files;
 
-    /* ③ 画像アップロード */
     const uploadImageTasks = [...imageFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -195,7 +185,6 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const imageURLs = await Promise.all(uploadImageTasks);
 
-    /* ④ ファイルアップロード */
     const uploadFileTasks = [...otherFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -203,7 +192,6 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const fileURLs = await Promise.all(uploadFileTasks);
 
-    /* ⑤ Firestore 保存 */
     const postRef = await db.collection("posts").add({
         title,
         description,
@@ -214,12 +202,10 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: Date.now()
     });
 
-    /* ⑥ postCount を +1 */
     await userRef.update({
         postCount: firebase.firestore.FieldValue.increment(1)
     });
 
-    /* ⑦ 通知 */
     const usersSnap = await db.collection("users").get();
     const postId = postRef.id;
 
