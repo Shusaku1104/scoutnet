@@ -29,9 +29,12 @@
             position:sticky;
             top:0;
             z-index:100;
+
+            /* ★ 横スライド復活の本体 ★ */
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* 透明の壁を削除 */
         nav div:last-child {
             white-space: nowrap;
         }
@@ -189,12 +192,14 @@
 <div class="container">
     <div class="post-card">
 
+        <!-- 画像スライダー -->
         <div class="slider">
             <button class="slide-btn" id="prevBtn">←</button>
             <img id="slideImage" class="slide-img">
             <button class="slide-btn" id="nextBtn">→</button>
         </div>
 
+        <!-- 本文 -->
         <div class="title" id="title"></div>
         <div class="desc" id="desc"></div>
 
@@ -223,12 +228,12 @@
 </div>
 
 <script>
-/* Firebase 設定（修正版） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.appspot.com",   // ← 修正！
+  storageBucket: "scoutnet12.appspot.com",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
