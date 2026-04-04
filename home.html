@@ -28,9 +28,13 @@
             position:sticky;
             top:0;
             z-index:100;
+
+            /* ★ 横スライド復活の本体 ★ */
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* 透明の壁を完全削除 */
+        /* 横並び維持（透明の壁なし） */
         nav div:last-child {
             white-space: nowrap;
         }
@@ -150,12 +154,12 @@
 </div>
 
 <script>
-/* Firebase 設定（Storage 修正版と同じプロジェクト） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.appspot.com",   // ← 修正済み！
+  storageBucket: "scoutnet12.appspot.com",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
