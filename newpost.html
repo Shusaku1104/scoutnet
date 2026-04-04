@@ -31,7 +31,10 @@
             z-index:100;
         }
 
-        /* ← これが原因だったので削除済み */
+        /* 透明の壁を完全削除 */
+        nav div:last-child {
+            white-space: nowrap;
+        }
 
         nav a {
             color:#4E342E;
@@ -132,12 +135,12 @@
 </div>
 
 <script>
-/* Firebase 設定 */
+/* Firebase 設定（Storage 修正版） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",   // ← 修正済み！
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -178,6 +181,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const imageFiles = document.getElementById("images").files;
     const otherFiles = document.getElementById("files").files;
 
+    /* 画像アップロード */
     const uploadImageTasks = [...imageFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -185,6 +189,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const imageURLs = await Promise.all(uploadImageTasks);
 
+    /* その他ファイルアップロード */
     const uploadFileTasks = [...otherFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
@@ -192,6 +197,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     });
     const fileURLs = await Promise.all(uploadFileTasks);
 
+    /* Firestore に投稿を追加 */
     const postRef = await db.collection("posts").add({
         title,
         description,
@@ -202,10 +208,12 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: Date.now()
     });
 
+    /* 投稿数を +1 */
     await userRef.update({
         postCount: firebase.firestore.FieldValue.increment(1)
     });
 
+    /* 通知を全ユーザーに送信 */
     const usersSnap = await db.collection("users").get();
     const postId = postRef.id;
 
