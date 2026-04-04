@@ -66,18 +66,18 @@
 <div class="container">
     <h2>ScoutNet ログイン</h2>
 
-    <input type="text" id="email" placeholder="メールアドレス">
+    <input type="email" id="email" placeholder="メールアドレス（例: example@gmail.com）">
     <input type="password" id="password" placeholder="パスワード">
 
     <button class="btn" id="loginBtn">ログイン</button>
 
     <div class="link">
-        <a href="signup.html">新規登録はこちら</a>
+        <a href="signup.html">メールアドレスで新規登録</a>
     </div>
 </div>
 
 <script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -101,22 +101,16 @@ document.getElementById("loginBtn").onclick = async () => {
     }
 
     try {
-        // ① Authentication でログイン
         const userCredential = await auth.signInWithEmailAndPassword(email, pw);
         const uid = userCredential.user.uid;
 
-        // ② Firestore のユーザーデータを取得
         const snap = await db.collection("users").doc(uid).get();
-
         if (!snap.exists) {
             alert("ユーザーデータが存在しません");
             return;
         }
 
-        // ③ ローカルに UID を保存
         localStorage.setItem("currentUser", uid);
-
-        alert("ログイン成功！");
         location.href = "home.html";
 
     } catch (error) {
