@@ -138,12 +138,12 @@
 </div>
 
 <script>
-/* Firebase 設定（周作専用・統一版） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",  // ← 正しい値
+  storageBucket: "scoutnet12.firebasestorage.app",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -156,7 +156,7 @@ const storage = firebase.storage();
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) location.href = "login.html";
 
-/* ランダムファイル名（日本語対策） */
+/* ランダムファイル名 */
 const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now();
 
 /* 投稿処理 */
@@ -173,7 +173,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         return;
     }
 
-    /* ② タイトル・説明文チェック */
+    /* ② 入力チェック */
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
@@ -213,7 +213,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: Date.now()
     });
 
-    /* ⑥ 投稿成功したら postCount を +1 */
+    /* ⑥ postCount を +1 */
     await userRef.update({
         postCount: firebase.firestore.FieldValue.increment(1)
     });
