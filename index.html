@@ -2,19 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScoutNet</title>
 </head>
 <body>
 
 <script>
-// ログインしてるか確認
+// ScoutNet トップページ
+// ログイン状態によって自動でページを振り分ける
+
 const currentUser = localStorage.getItem("currentUser");
 
 if (currentUser) {
-    location.href = "home.html";   // ログイン済み
+    // ログイン済み → ホームへ
+    location.href = "home.html";
 } else {
-    location.href = "login.html";  // 未ログイン
+    // 未ログイン → ログインページへ
+    location.href = "login.html";
 }
 </script>
 
