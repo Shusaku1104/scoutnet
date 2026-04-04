@@ -133,12 +133,12 @@
     </div>
 
     <div style="display:flex; align-items:center; gap:15px;">
-    <button id="categoryBtn">カテゴリ ▼</button>
-    <a href="about.html">このサイトについて</a>
-    <a href="newpost.html">投稿する</a>
-    <a href="profile.html">プロフィール</a>
-    <a href="notifications.html">🔔 通知</a>
-</div>
+        <button id="categoryBtn">カテゴリ ▼</button>
+        <a href="about.html">このサイトについて</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
 </nav>
 
 <div id="categoryMenu">
@@ -150,10 +150,13 @@
 
 <div class="container">
     <div id="postList"></div>
+
+    <!-- ▼ ページ番号 -->
+    <div id="pagination" style="text-align:center; margin:20px 0;"></div>
 </div>
 
 <script>
-/* Firebase 設定（周作専用・統一版） */
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -170,14 +173,17 @@ const db = firebase.firestore();
 const user = localStorage.getItem("currentUser");
 if (!user) location.href = "login.html";
 
-/* UI 要素 */
+/* UI */
 const postList = document.getElementById("postList");
 const categoryBtn = document.getElementById("categoryBtn");
 const categoryMenu = document.getElementById("categoryMenu");
 
 let currentCategory = "すべて";
+let currentPage = 1;
+const perPage = 10;
+let totalPages = 1;
 
-/* カテゴリメニュー表示切替 */
+/* カテゴリメニュー */
 categoryBtn.addEventListener("click", () => {
     categoryMenu.style.display =
         categoryMenu.style.display === "block" ? "none" : "block";
@@ -187,61 +193,96 @@ categoryBtn.addEventListener("click", () => {
 document.querySelectorAll(".category-item").forEach(item => {
     item.addEventListener("click", () => {
         currentCategory = item.dataset.cat;
+        currentPage = 1; // ← ページ番号リセット
         categoryMenu.style.display = "none";
         loadPosts();
     });
 });
 
-/* 投稿読み込み（カテゴリ対応） */
-function loadPosts() {
+/* ページ番号生成 */
+function renderPagination() {
+    const pag = document.getElementById("pagination");
+    pag.innerHTML = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.style.margin = "0 5px";
+        btn.style.padding = "6px 12px";
+        btn.style.borderRadius = "6px";
+        btn.style.border = "1px solid #A5D6A7";
+        btn.style.background = (i === currentPage) ? "#2E7D32" : "white";
+        btn.style.color = (i === currentPage) ? "white" : "#2E7D32";
+        btn.style.cursor = "pointer";
+
+        btn.addEventListener("click", () => {
+            currentPage = i;
+            loadPosts();
+        });
+
+        pag.appendChild(btn);
+    }
+}
+
+/* 投稿読み込み（ページ番号対応） */
+async function loadPosts() {
     postList.innerHTML = "";
 
-    let ref = db.collection("posts").orderBy("createdAt", "desc");
+    let ref = db.collection("posts");
 
     if (currentCategory !== "すべて") {
-        ref = db.collection("posts")
-            .where("category", "==", currentCategory)
-            .orderBy("createdAt", "desc");
+        ref = ref.where("category", "==", currentCategory);
     }
 
-    ref.onSnapshot(snapshot => {
-        postList.innerHTML = "";
+    // 全件数
+    const totalSnap = await ref.get();
+    const totalCount = totalSnap.size;
 
-        snapshot.forEach(doc => {
-            const post = doc.data();
-            const id = doc.id;
+    totalPages = Math.ceil(totalCount / perPage);
 
-            const div = document.createElement("div");
-            div.className = "post";
+    renderPagination();
 
-            if (post.images && post.images.length > 0) {
-                const img = document.createElement("img");
-                img.src = post.images[0];
-                div.appendChild(img);
-            }
+    const startIndex = (currentPage - 1) * perPage;
 
-            const tag = document.createElement("div");
-            tag.className = "category-tag";
-            tag.textContent = post.category;
-            div.appendChild(tag);
+    const ordered = ref.orderBy("createdAt", "desc");
+    const pageSnap = await ordered.get();
 
-            const title = document.createElement("div");
-            title.className = "title";
-            title.textContent = post.title;
+    const docs = pageSnap.docs.slice(startIndex, startIndex + perPage);
 
-            const desc = document.createElement("div");
-            desc.className = "desc";
-            desc.textContent = post.description;
+    docs.forEach(doc => {
+        const post = doc.data();
+        const id = doc.id;
 
-            div.appendChild(title);
-            div.appendChild(desc);
+        const div = document.createElement("div");
+        div.className = "post";
 
-            div.addEventListener("click", () => {
-                location.href = "post.html?id=" + id;
-            });
+        if (post.images && post.images.length > 0) {
+            const img = document.createElement("img");
+            img.src = post.images[0];
+            div.appendChild(img);
+        }
 
-            postList.appendChild(div);
+        const tag = document.createElement("div");
+        tag.className = "category-tag";
+        tag.textContent = post.category;
+        div.appendChild(tag);
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = post.title;
+
+        const desc = document.createElement("div");
+        desc.className = "desc";
+        desc.textContent = post.description;
+
+        div.appendChild(title);
+        div.appendChild(desc);
+
+        div.addEventListener("click", () => {
+            location.href = "post.html?id=" + id;
         });
+
+        postList.appendChild(div);
     });
 }
 
