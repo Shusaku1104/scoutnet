@@ -168,8 +168,8 @@ document.getElementById("postBtn").addEventListener("click", async () => {
 
     const postCount = userSnap.data().postCount || 0;
 
-    if (postCount >= 200) {
-        alert("投稿上限の200件に達しています！");
+    if (postCount >= 190) {
+        alert("投稿上限の190件に達しています！");
         return;
     }
 
