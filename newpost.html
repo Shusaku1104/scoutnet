@@ -203,14 +203,14 @@ document.getElementById("postBtn").addEventListener("click", async () => {
 
     /* Firestore に投稿を追加 */
     const postRef = await db.collection("posts").add({
-        title,
-        description,
-        category,
-        images: imageURLs,
-        files: fileURLs,
-        createdBy: currentUser,
-        createdAt: Date.now()
-    });
+    title,
+    description,
+    category,
+    images: imageURLs,
+    files: fileURLs,
+    createdBy: currentUser,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+});
 
     /* 投稿数を +1 */
     await userRef.update({
