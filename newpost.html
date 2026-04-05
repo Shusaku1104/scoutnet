@@ -38,6 +38,7 @@
         /* 横並び維持（透明の壁なし） */
         nav div:last-child {
             white-space: nowrap;
+            min-width: max-content; /* ← これを追加 */
         }
 
         nav a {
@@ -203,14 +204,14 @@ document.getElementById("postBtn").addEventListener("click", async () => {
 
     /* Firestore に投稿を追加 */
     const postRef = await db.collection("posts").add({
-    title,
-    description,
-    category,
-    images: imageURLs,
-    files: fileURLs,
-    createdBy: currentUser,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-});
+        title,
+        description,
+        category,
+        images: imageURLs,
+        files: fileURLs,
+        createdBy: currentUser,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
     /* 投稿数を +1 */
     await userRef.update({
