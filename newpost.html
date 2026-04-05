@@ -18,8 +18,6 @@
             padding:0;
             color:#4E342E;
         }
-
-        /* ★ ロゴ固定、右側だけ横スクロール ★ */
         nav {
             display:flex;
             justify-content:space-between;
@@ -31,28 +29,22 @@
             top:0;
             z-index:100;
         }
-
         nav div:last-child {
             display:flex;
             gap:15px;
             overflow-x:auto;
-            -webkit-overflow-scrolling: touch;
             white-space: nowrap;
-            min-width: max-content;
         }
-
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
         }
-
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
-
         .form-box {
             background:white;
             border:2px solid #D7C4A3;
@@ -60,13 +52,11 @@
             padding:20px;
             box-shadow:0 4px 0 #D7C4A3;
         }
-
         label {
             font-weight:600;
             margin-top:12px;
             display:block;
         }
-
         input, textarea, select {
             width:100%;
             padding:10px;
@@ -75,11 +65,9 @@
             border:1px solid #CCC;
             font-size:15px;
         }
-
         textarea {
             height:120px;
         }
-
         #postBtn {
             width:100%;
             background:#2E7D32;
@@ -230,7 +218,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
             from: currentUser,
             type: "newpost",
             postId,
-            createdAt: Date.now()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     });
 
