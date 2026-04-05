@@ -14,7 +14,6 @@
             color:#4E342E;
         }
 
-        /* ★ ロゴ固定、右側だけ横スクロール ★ */
         nav {
             display:flex;
             justify-content:space-between;
@@ -31,9 +30,7 @@
             display:flex;
             gap:15px;
             overflow-x:auto;
-            -webkit-overflow-scrolling: touch;
             white-space: nowrap;
-            min-width: max-content;
         }
 
         nav a {
@@ -57,14 +54,14 @@
             cursor:pointer;
         }
 
-        .notice-icon {
-            font-size:22px;
-            margin-right:10px;
-        }
-
         .notice-row {
             display:flex;
             align-items:center;
+        }
+
+        .notice-icon {
+            font-size:22px;
+            margin-right:10px;
         }
 
         .notice-time {
@@ -117,8 +114,10 @@ const db = firebase.firestore();
 
 /* 時間を「○分前」に変換 */
 function timeAgo(timestamp) {
+    if (!timestamp) return "";
+    const t = timestamp.toMillis ? timestamp.toMillis() : timestamp;
     const now = Date.now();
-    const diff = now - timestamp;
+    const diff = now - t;
 
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return "たった今";
@@ -152,19 +151,27 @@ auth.onAuthStateChanged(async (user) => {
 
                 /* from のユーザー名取得 */
                 const userSnap = await db.collection("users").doc(data.from).get();
-                const fromName = userSnap.exists ? userSnap.data().name : data.from;
+                const fromName = userSnap.exists ? userSnap.data().name : "不明なユーザー";
 
                 let icon = "";
                 let message = "";
 
+                /* いいね通知 */
                 if (data.type === "like") {
                     icon = "❤️";
                     message = `${fromName} さんがあなたの投稿にいいねしました`;
                 }
 
+                /* コメント通知 */
                 if (data.type === "comment") {
                     icon = "💬";
                     message = `${fromName} さんがあなたの投稿にコメントしました`;
+                }
+
+                /* 新規投稿通知（今回追加） */
+                if (data.type === "newpost") {
+                    icon = "🆕";
+                    message = `${fromName} さんが新しい投稿を追加しました`;
                 }
 
                 const card = document.createElement("div");
@@ -179,7 +186,9 @@ auth.onAuthStateChanged(async (user) => {
                 `;
 
                 card.onclick = () => {
-                    location.href = \`post.html?id=\${data.postId}\`;
+                    if (data.postId) {
+                        location.href = \`post.html?id=\${data.postId}\`;
+                    }
                 };
 
                 box.appendChild(card);
