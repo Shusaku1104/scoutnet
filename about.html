@@ -25,11 +25,16 @@
             position:sticky;
             top:0;
             z-index:100;
+
+            /* ★ 横スクロール復活の本体 ★ */
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* 透明の壁を完全削除 */
+        /* 横並び維持（透明の壁なし） */
         nav div:last-child {
             white-space: nowrap;
+            min-width: max-content; /* ← これを追加 */
         }
 
         nav a {
