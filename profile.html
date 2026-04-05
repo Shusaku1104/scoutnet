@@ -19,6 +19,7 @@
             color:#4E342E;
         }
 
+        /* ★ ロゴ固定、右側だけ横スクロール ★ */
         nav {
             display:flex;
             justify-content:space-between;
@@ -29,23 +30,21 @@
             position:sticky;
             top:0;
             z-index:100;
-
-            /* ★ 横スライド復活の本体 ★ */
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
-        /* 横並び維持（透明の壁なし） */
         nav div:last-child {
+            display:flex;
+            gap:15px;
+            overflow-x:auto;
+            -webkit-overflow-scrolling: touch;
             white-space: nowrap;
-            min-width: max-content; /* ← これを追加 */
+            min-width: max-content;
         }
 
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            margin-left:15px;
         }
 
         .container {
@@ -109,7 +108,7 @@
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; align-items:center; gap:15px;">
+    <div>
         <a href="home.html">ホーム</a>
         <a href="about.html">このサイトについて</a>
         <a href="newpost.html">投稿する</a>
@@ -123,7 +122,6 @@
 
         <img id="icon" class="icon">
 
-        <!-- スマホで消えないように display:none を使わない -->
         <input type="file" id="iconInput" accept="image/*"
                style="opacity:0; position:absolute; width:1px; height:1px;">
 
