@@ -25,23 +25,22 @@
             position:sticky;
             top:0;
             z-index:100;
-
-            /* ★ 横スクロール復活の本体 ★ */
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
-        /* 横並び維持（透明の壁なし） */
+        /* 右側だけ横スクロール */
         nav div:last-child {
+            display:flex;
+            gap:15px;
+            overflow-x:auto;
+            -webkit-overflow-scrolling: touch;
             white-space: nowrap;
-            min-width: max-content; /* ← これを追加 */
+            min-width: max-content;
         }
 
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            margin-left:15px;
         }
 
         .container {
@@ -85,7 +84,7 @@
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; align-items:center; gap:15px;">
+    <div>
         <a href="home.html">ホーム</a>
         <a href="about.html">このサイトについて</a>
         <a href="newpost.html">投稿する</a>
