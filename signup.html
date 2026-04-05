@@ -5,7 +5,7 @@
     <title>ScoutNet - 新規登録</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8系 -->
+    <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -83,10 +83,11 @@ const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -120,13 +121,13 @@ document.getElementById("signupBtn").onclick = async () => {
         // Firestore にユーザーデータ作成
         await db.collection("users").doc(uid).set({
             email: email,
-            name: email.split("@")[0], // 初期表示名はメールの@前
+            name: email.split("@")[0], // 初期表示名
             bio: "",
             iconURL: "",
             prefecture: "",
             troop: "",
             postCount: 0,
-            createdAt: Date.now()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         alert("登録が完了しました！");
