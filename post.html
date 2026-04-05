@@ -5,7 +5,7 @@
     <title>ScoutNet - 投稿詳細</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8系 -->
+    <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
@@ -29,14 +29,8 @@
             position:sticky;
             top:0;
             z-index:100;
-
-            /* ★ 横スライド復活の本体 ★ */
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        nav div:last-child {
-            white-space: nowrap;
+            overflow-x:auto;
+            white-space:nowrap;
         }
 
         nav a {
@@ -60,6 +54,7 @@
             box-shadow:0 4px 0 #D7C4A3;
         }
 
+        /* スライダー */
         .slider {
             position: relative;
             width: 100%;
@@ -114,7 +109,7 @@
         }
 
         .like-btn {
-            font-size:22px;
+            font-size:26px;
             cursor:pointer;
             user-select:none;
             margin-top:10px;
@@ -253,32 +248,45 @@ const likeRef = postRef.collection("likes").doc(currentUser);
 
 let postData = null;
 
-/* 投稿読み込み */
+/* 投稿読み込み（完全版） */
 postRef.get().then(async (snap) => {
-    if (!snap.exists) return;
+    if (!snap.exists) {
+        alert("投稿が見つかりません");
+        location.href = "home.html";
+        return;
+    }
 
     const post = snap.data();
     postData = post;
 
-    document.getElementById("title").textContent = post.title;
-    document.getElementById("desc").textContent = post.description;
-    document.getElementById("date").textContent = new Date(post.createdAt).toLocaleString();
+    document.getElementById("title").textContent = post.title || "(タイトルなし)";
+    document.getElementById("desc").textContent = post.description || "";
+
+    /* createdAt（Timestamp / 数値 / null 全対応） */
+    let createdAt = "";
+    if (post.createdAt?.toMillis) {
+        createdAt = new Date(post.createdAt.toMillis()).toLocaleString();
+    } else if (typeof post.createdAt === "number") {
+        createdAt = new Date(post.createdAt).toLocaleString();
+    } else {
+        createdAt = "日時不明";
+    }
+    document.getElementById("date").textContent = createdAt;
 
     /* 投稿者名 */
     const userSnap = await db.collection("users").doc(post.createdBy).get();
-    document.getElementById("author").textContent =
-        userSnap.exists ? userSnap.data().name : post.createdBy;
+    const authorName = userSnap.exists ? (userSnap.data().name || "名前未設定") : "不明なユーザー";
+    document.getElementById("author").textContent = authorName;
 
     /* 添付ファイル */
     const filesDiv = document.getElementById("files");
-    if (post.files) {
-        post.files.forEach(url => {
-            const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
-            filesDiv.innerHTML += `
-                <div class="file">📄 <a href="${url}" target="_blank">${fileName}</a></div>
-            `;
-        });
-    }
+    const files = post.files || [];
+    files.forEach(url => {
+        const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
+        filesDiv.innerHTML += `
+            <div class="file">📄 <a href="${url}" target="_blank">${fileName}</a></div>
+        `;
+    });
 
     /* 投稿者なら削除ボタン表示 */
     if (post.createdBy === currentUser) {
@@ -293,6 +301,7 @@ postRef.get().then(async (snap) => {
     function updateSlide() {
         if (images.length > 0) {
             slideImage.src = images[currentIndex];
+            slideImage.style.display = "block";
         } else {
             slideImage.style.display = "none";
         }
@@ -323,7 +332,7 @@ postRef.collection("likes").onSnapshot((snapshot) => {
     document.getElementById("likeCount").textContent = snapshot.size + "件";
 });
 
-/* ❤️ いいね押したとき */
+/* ❤️ いいね押したとき（完全版） */
 document.getElementById("likeBtn").onclick = async () => {
     const snap = await likeRef.get();
 
@@ -332,7 +341,7 @@ document.getElementById("likeBtn").onclick = async () => {
     } else {
         await likeRef.set({
             user: currentUser,
-            createdAt: Date.now()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         if (postData.createdBy !== currentUser) {
@@ -341,36 +350,45 @@ document.getElementById("likeBtn").onclick = async () => {
                 from: currentUser,
                 type: "like",
                 postId,
-                createdAt: Date.now()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
     }
 };
 
-/* 💬 コメント読み込み */
-const commentsRef = postRef.collection("comments").orderBy("createdAt", "asc");
+/* 💬 コメント読み込み（高速版） */
+postRef.collection("comments")
+    .orderBy("createdAt", "asc")
+    .onSnapshot(async (snapshot) => {
 
-commentsRef.onSnapshot(async (snapshot) => {
-    const commentsDiv = document.getElementById("comments");
-    commentsDiv.innerHTML = "";
+        const commentsDiv = document.getElementById("comments");
+        commentsDiv.innerHTML = "";
 
-    for (const docSnap of snapshot.docs) {
-        const c = docSnap.data();
+        const userIds = [...new Set(snapshot.docs.map(doc => doc.data().user))];
 
-        /* ユーザー名取得 */
-        const userSnap = await db.collection("users").doc(c.user).get();
-        const userName = userSnap.exists ? userSnap.data().name : c.user;
+        const userSnaps = await Promise.all(
+            userIds.map(uid => db.collection("users").doc(uid).get())
+        );
 
-        commentsDiv.innerHTML += `
-            <div class="comment">
-                <div class="comment-user">${userName}</div>
-                <div>${c.text}</div>
-            </div>
-        `;
-    }
-});
+        const userMap = {};
+        userSnaps.forEach((snap, i) => {
+            userMap[userIds[i]] = snap.exists ? snap.data().name : "不明なユーザー";
+        });
 
-/* 💬 コメント送信 */
+        snapshot.docs.forEach(docSnap => {
+            const c = docSnap.data();
+            const userName = userMap[c.user] || "不明なユーザー";
+
+            commentsDiv.innerHTML += `
+                <div class="comment">
+                    <div class="comment-user">${userName}</div>
+                    <div>${c.text}</div>
+                </div>
+            `;
+        });
+    });
+
+/* 💬 コメント送信（完全版） */
 document.getElementById("sendComment").onclick = async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text) return;
@@ -378,7 +396,7 @@ document.getElementById("sendComment").onclick = async () => {
     await postRef.collection("comments").add({
         text,
         user: currentUser,
-        createdAt: Date.now()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     document.getElementById("commentInput").value = "";
@@ -389,28 +407,32 @@ document.getElementById("sendComment").onclick = async () => {
             from: currentUser,
             type: "comment",
             postId,
-            createdAt: Date.now()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
     }
 };
 
-/* 🗑 投稿削除 */
+/* 🗑 投稿削除（安全版） */
 document.getElementById("deleteBtn").onclick = async () => {
     if (!confirm("本当に削除しますか？")) return;
 
     /* 画像削除 */
     if (postData.images) {
         for (let url of postData.images) {
-            const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-            await storage.ref(path).delete();
+            try {
+                const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+                await storage.ref(path).delete();
+            } catch (e) {}
         }
     }
 
     /* ファイル削除 */
     if (postData.files) {
         for (let url of postData.files) {
-            const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
-            await storage.ref(path).delete();
+            try {
+                const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+                await storage.ref(path).delete();
+            } catch (e) {}
         }
     }
 
