@@ -77,18 +77,22 @@
 </div>
 
 <script>
-/* Firebase 設定 */
+/* Firebase 設定（完全版） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.firebasestorage.app",
+  storageBucket: "scoutnet12.appspot.com",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+/* ログイン状態を永続化（重要） */
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* ログイン処理 */
 document.getElementById("loginBtn").onclick = async () => {
@@ -110,7 +114,9 @@ document.getElementById("loginBtn").onclick = async () => {
             return;
         }
 
+        /* UID を保存 */
         localStorage.setItem("currentUser", uid);
+
         location.href = "home.html";
 
     } catch (error) {
