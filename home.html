@@ -166,7 +166,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* 🔥 永続化（これが無いと currentUser が読み込まれない） */
+/* 🔥 永続化（currentUser が確実に読み込まれる） */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* 🔥 ログイン確認（読み込み前の null で飛ばさない） */
@@ -174,13 +174,16 @@ auth.onAuthStateChanged(user => {
     console.log("home.html onAuthStateChanged:", user);
 
     if (user === null) {
-        console.log("まだ読み込み中…");
+        console.log("読み込み中…");
         return;
     }
 
     if (!user) {
         location.href = "login.html";
+        return;
     }
+
+    console.log("ログイン済み:", user.uid);
 });
 
 /* UI */
