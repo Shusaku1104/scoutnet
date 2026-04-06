@@ -143,9 +143,16 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* ログイン確認 */
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
+/* 🔥 ログイン確認（localStorage を使わない完全版） */
+let currentUser = null;
+
+auth.onAuthStateChanged(user => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+    currentUser = user.uid;
+});
 
 /* ランダムファイル名 */
 const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now();
@@ -153,10 +160,15 @@ const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now(
 /* 投稿処理 */
 document.getElementById("postBtn").addEventListener("click", async () => {
 
+    if (!currentUser) {
+        alert("ログイン情報を確認中です。少し待ってください。");
+        return;
+    }
+
     const userRef = db.collection("users").doc(currentUser);
     const userSnap = await userRef.get();
 
-    const postCount = userSnap.data().postCount || 0;
+    const postCount = userSnap.data()?.postCount || 0;
 
     if (postCount >= 190) {
         alert("投稿上限の190件に達しています！");
