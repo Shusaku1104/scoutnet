@@ -254,8 +254,26 @@ db.collection("users").doc(currentUser).get().then(async (doc) => {
             iconURL: newIconURL
         });
 
-        alert("プロフィールを更新しました");
-        location.reload();
+        /* 🔥 保存完了 → 自動で戻る */
+const msg = document.createElement("div");
+msg.style.position = "fixed";
+msg.style.top = "50%";
+msg.style.left = "50%";
+msg.style.transform = "translate(-50%, -50%)";
+msg.style.background = "white";
+msg.style.padding = "20px 30px";
+msg.style.borderRadius = "12px";
+msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+msg.style.fontSize = "18px";
+msg.style.fontWeight = "600";
+msg.style.color = "#2E7D32";
+msg.innerText = "プロフィールを更新しました！";
+
+document.body.appendChild(msg);
+
+setTimeout(() => {
+    location.reload();
+}, 1500);
     };
 });
 </script>
