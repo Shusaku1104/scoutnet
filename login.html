@@ -91,8 +91,31 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* 🔥 ログイン状態を永続化（これが超重要） */
+/* 🔥 ログイン状態を永続化 */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+/* 🔥 ログイン状態が反映された瞬間をキャッチ */
+auth.onAuthStateChanged(user => {
+    console.log("onAuthStateChanged:", user);
+
+    if (user) {
+        console.log("🔥 currentUser が反映された！ UID:", user.uid);
+
+        // Firestore にユーザーデータがあるか確認
+        db.collection("users").doc(user.uid).get().then(snap => {
+            if (!snap.exists) {
+                alert("ユーザーデータが存在しません");
+                return;
+            }
+
+            // localStorage に保存
+            localStorage.setItem("currentUser", user.uid);
+
+            // 🔥 ここで初めて home に飛ぶ
+            location.href = "home.html";
+        });
+    }
+});
 
 /* ログイン処理 */
 document.getElementById("loginBtn").onclick = async () => {
@@ -105,25 +128,8 @@ document.getElementById("loginBtn").onclick = async () => {
     }
 
     try {
-        const userCredential = await auth.signInWithEmailAndPassword(email, pw);
-        const uid = userCredential.user.uid;
-
-        /* Firestore にユーザーデータがあるか確認 */
-        const snap = await db.collection("users").doc(uid).get();
-        if (!snap.exists) {
-            alert("ユーザーデータが存在しません");
-            return;
-        }
-
-        /* UID を localStorage に保存 */
-        localStorage.setItem("currentUser", uid);
-
-        /* 🔥 home に飛ばさず、ここで止める（デバッグ用） */
-        console.log("ログイン成功！ここで currentUser を確認して！");
-        console.log("firebase.auth().currentUser → を実行してみて");
-
-        // location.href = "home.html"; ← デバッグのためコメントアウト
-
+        await auth.signInWithEmailAndPassword(email, pw);
+        console.log("ログイン成功！ onAuthStateChanged を待って！");
     } catch (error) {
         alert("ログインエラー：" + error.message);
     }
