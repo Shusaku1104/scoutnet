@@ -121,7 +121,7 @@ document.getElementById("signupBtn").onclick = async () => {
         // Firestore にユーザーデータ作成
         await db.collection("users").doc(uid).set({
             email: email,
-            name: email.split("@")[0], // 初期表示名
+            name: email.split("@")[0],
             bio: "",
             iconURL: "",
             prefecture: "",
@@ -129,6 +129,9 @@ document.getElementById("signupBtn").onclick = async () => {
             postCount: 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+
+        // ★ UID を保存（重要）
+        localStorage.setItem("currentUser", uid);
 
         alert("登録が完了しました！");
         location.href = "home.html";
