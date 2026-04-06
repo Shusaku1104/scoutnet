@@ -5,7 +5,7 @@
     <title>ScoutNet - ログイン</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8系 -->
+    <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -66,18 +66,18 @@
 <div class="container">
     <h2>ScoutNet ログイン</h2>
 
-    <input type="email" id="email" placeholder="メールアドレス（例: example@gmail.com）">
+    <input type="email" id="email" placeholder="メールアドレス">
     <input type="password" id="password" placeholder="パスワード">
 
     <button class="btn" id="loginBtn">ログイン</button>
 
     <div class="link">
-        <a href="signup.html">メールアドレスで新規登録</a>
+        <a href="signup.html">新規登録はこちら</a>
     </div>
 </div>
 
 <script>
-/* Firebase 設定（完全版） */
+/* Firebase 設定（全ページ共通） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -91,7 +91,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* ログイン状態を永続化（重要） */
+/* 🔥 ログイン状態を永続化（これが超重要） */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* ログイン処理 */
@@ -108,15 +108,17 @@ document.getElementById("loginBtn").onclick = async () => {
         const userCredential = await auth.signInWithEmailAndPassword(email, pw);
         const uid = userCredential.user.uid;
 
+        /* Firestore にユーザーデータがあるか確認 */
         const snap = await db.collection("users").doc(uid).get();
         if (!snap.exists) {
             alert("ユーザーデータが存在しません");
             return;
         }
 
-        /* UID を保存 */
+        /* UID を localStorage に保存（home.html でも使う） */
         localStorage.setItem("currentUser", uid);
 
+        /* ホームへ移動 */
         location.href = "home.html";
 
     } catch (error) {
