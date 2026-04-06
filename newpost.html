@@ -143,7 +143,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* 🔥 ログイン確認（localStorage を使わない完全版） */
+/* 🔥 ログイン確認 */
 let currentUser = null;
 
 auth.onAuthStateChanged(user => {
@@ -236,8 +236,27 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         });
     });
 
-    alert("投稿しました！");
-    location.href = "home.html";
+    /* 🔥 投稿完了 → 自動でホームへ戻る */
+    const msg = document.createElement("div");
+    msg.style.position = "fixed";
+    msg.style.top = "50%";
+    msg.style.left = "50%";
+    msg.style.transform = "translate(-50%, -50%)";
+    msg.style.background = "white";
+    msg.style.padding = "20px 30px";
+    msg.style.borderRadius = "12px";
+    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    msg.style.fontSize = "18px";
+    msg.style.fontWeight = "600";
+    msg.style.color = "#2E7D32";
+    msg.innerText = "投稿が完了しました！\nホームに戻ります…";
+
+    document.body.appendChild(msg);
+
+    setTimeout(() => {
+        location.href = "home.html";
+    }, 1500);
+
 });
 </script>
 
