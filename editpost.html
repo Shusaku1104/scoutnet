@@ -5,20 +5,19 @@
     <title>ScoutNet - 投稿編集</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8系 -->
+    <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
-        html { font-size: clamp(14px, 2.5vw, 18px); }
-
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-            color: #4E342E;
+            background:#f5f5f5;
+            margin:0;
+            padding:20px;
+            color:#4E342E;
         }
 
         nav {
@@ -26,7 +25,7 @@
             justify-content:space-between;
             align-items:center;
             padding:12px 20px;
-            background:#ffffff;
+            background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
@@ -37,57 +36,83 @@
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            font-size: 0.9rem;
+            transition:0.1s;
+        }
+        nav a:active {
+            transform:scale(0.95);
+            opacity:0.8;
         }
 
         .card {
-            background: #FFFFFF;
-            padding: 20px;
-            border-radius: 16px;
-            border: 2px solid #D7C4A3;
-            margin: 20px auto;
-            max-width: 600px;
-            box-shadow: 0 4px 0 #D7C4A3;
+            background:white;
+            padding:20px;
+            border-radius:16px;
+            border:2px solid #D7C4A3;
+            margin:20px auto;
+            max-width:600px;
+            box-shadow:0 4px 0 #D7C4A3;
         }
 
         .input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #D7C4A3;
-            border-radius: 10px;
-            font-size: 1rem;
-            background: #fff;
-            margin-bottom: 16px;
+            width:100%;
+            padding:12px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            margin-bottom:16px;
+            font-size:16px;
         }
 
         .submit-btn {
-            width: 100%;
-            padding: 14px;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 3px 0 #1B5E20;
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:17px;
+            font-weight:700;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+            transition:0.1s;
+        }
+        .submit-btn:active {
+            transform:scale(0.97);
+        }
+
+        .preview-box {
+            margin-top:10px;
         }
 
         .preview-img {
-            width: 100%;
-            border-radius: 12px;
-            margin-top: 10px;
+            width:100%;
+            border-radius:12px;
+            margin-bottom:10px;
+        }
+
+        .remove-btn {
+            background:#c62828;
+            color:white;
+            padding:8px;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            width:100%;
+            margin-bottom:15px;
+            transition:0.1s;
+        }
+        .remove-btn:active {
+            transform:scale(0.97);
         }
     </style>
 </head>
 <body>
 
 <nav>
-    <div style="font-size:1.3rem; font-weight:700; color:#2E7D32;">
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
         🏕 ScoutNet
     </div>
 
-    <div style="display:flex; gap:18px; font-weight:600;">
+    <div style="display:flex; gap:18px;">
         <a href="home.html">ホーム</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
@@ -111,51 +136,85 @@
         <option value="奉仕">🤝 奉仕</option>
     </select>
 
-    <label>画像を変更（任意）</label>
-    <input type="file" id="imageInput" accept="image/*" class="input">
+    <h3>📷 現在の画像</h3>
+    <div id="currentImages"></div>
 
-    <img id="preview" class="preview-img" style="display:none;">
+    <h3>📤 新しい画像を追加（複数可）</h3>
+    <input type="file" id="newImages" accept="image/*" multiple class="input">
 
     <button id="submit" class="submit-btn">更新する</button>
 </div>
 
 <script>
-/* Firebase 設定（ScoutNet12 の値に差し替え） */
+/* ポップアップ */
+function showPopup(message) {
+    const msg = document.createElement("div");
+    msg.style.position = "fixed";
+    msg.style.top = "50%";
+    msg.style.left = "50%";
+    msg.style.transform = "translate(-50%, -50%)";
+    msg.style.background = "white";
+    msg.style.padding = "20px 30px";
+    msg.style.borderRadius = "12px";
+    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    msg.style.fontSize = "20px";
+    msg.style.fontWeight = "700";
+    msg.style.color = "#2E7D32";
+    msg.style.zIndex = "9999";
+    msg.innerText = message;
+
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+}
+
+/* Firebase 設定（統一版） */
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "scoutnet12.firebaseapp.com",
-    projectId: "scoutnet12",
-    storageBucket: "scoutnet12.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12",
+  storageBucket: "scoutnet12.firebasestorage.app",
+  messagingSenderId: "572737738511",
+  appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
 
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+/* 投稿ID */
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
+const postRef = db.collection("posts").doc(postId);
 
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
-
+let currentUser = null;
 let originalImages = [];
 
+/* ログイン確認 */
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+    currentUser = user.uid;
+
+    loadPost();
+});
+
 /* 投稿読み込み */
-db.collection("posts").doc(postId).get().then(doc => {
-    if (!doc.exists) {
-        alert("投稿が見つかりません");
-        location.href = "home.html";
+async function loadPost() {
+    const snap = await postRef.get();
+    if (!snap.exists) {
+        showPopup("投稿が見つかりません");
+        setTimeout(() => location.href = "home.html", 1500);
         return;
     }
 
-    const post = doc.data();
+    const post = snap.data();
 
-    /* 投稿者チェック */
     if (post.createdBy !== currentUser) {
-        alert("この投稿を編集する権限がありません");
-        location.href = "home.html";
+        showPopup("編集権限がありません");
+        setTimeout(() => location.href = "home.html", 1500);
         return;
     }
 
@@ -165,26 +224,30 @@ db.collection("posts").doc(postId).get().then(doc => {
 
     originalImages = post.images || [];
 
-    if (originalImages.length > 0) {
-        const preview = document.getElementById("preview");
-        preview.src = originalImages[0];
-        preview.style.display = "block";
-    }
-});
+    const container = document.getElementById("currentImages");
+    container.innerHTML = "";
 
-/* 画像プレビュー */
-document.getElementById("imageInput").addEventListener("change", function() {
-    const file = this.files[0];
-    if (!file) return;
+    originalImages.forEach((url, index) => {
+        const box = document.createElement("div");
+        box.className = "preview-box";
 
-    const reader = new FileReader();
-    reader.onload = () => {
-        const preview = document.getElementById("preview");
-        preview.src = reader.result;
-        preview.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-});
+        const img = document.createElement("img");
+        img.src = url;
+        img.className = "preview-img";
+
+        const btn = document.createElement("button");
+        btn.className = "remove-btn";
+        btn.textContent = "この画像を削除";
+        btn.onclick = () => {
+            originalImages.splice(index, 1);
+            loadPost(); // 再描画
+        };
+
+        box.appendChild(img);
+        box.appendChild(btn);
+        container.appendChild(box);
+    });
+}
 
 /* 更新処理 */
 document.getElementById("submit").onclick = async () => {
@@ -193,29 +256,50 @@ document.getElementById("submit").onclick = async () => {
     const category = document.getElementById("category").value;
 
     if (!title || !description) {
-        alert("タイトルと説明は必須です");
+        showPopup("タイトルと説明は必須です");
         return;
     }
 
-    let imageUrls = originalImages;
+    const btn = document.getElementById("submit");
+    btn.disabled = true;
+    btn.textContent = "更新中…";
 
-    const file = document.getElementById("imageInput").files[0];
-    if (file) {
+    /* 新しい画像アップロード */
+    const newFiles = document.getElementById("newImages").files;
+    const uploadTasks = [...newFiles].map(async (file) => {
         const ref = storage.ref("posts/" + Date.now() + "_" + file.name);
         await ref.put(file);
-        const url = await ref.getDownloadURL();
-        imageUrls = [url];
+        return await ref.getDownloadURL();
+    });
+
+    const newImageUrls = await Promise.all(uploadTasks);
+
+    /* 削除された画像を Storage から削除 */
+    const snap = await postRef.get();
+    const oldImages = snap.data().images || [];
+
+    for (let old of oldImages) {
+        if (!originalImages.includes(old)) {
+            try {
+                const path = decodeURIComponent(old.split("/o/")[1].split("?")[0]);
+                await storage.ref(path).delete();
+            } catch (e) {}
+        }
     }
 
-    await db.collection("posts").doc(postId).update({
+    /* Firestore 更新 */
+    await postRef.update({
         title,
         description,
         category,
-        images: imageUrls
+        images: [...originalImages, ...newImageUrls]
     });
 
-    alert("投稿を更新しました！");
-    location.href = "post.html?id=" + postId;
+    showPopup("更新が完了しました！");
+
+    setTimeout(() => {
+        location.href = "post.html?id=" + postId;
+    }, 1500);
 };
 </script>
 
