@@ -48,6 +48,12 @@
             display:inline-block;
         }
 
+        /* 選択中タブ（緑） */
+        nav a.active {
+            color:#2E7D32;
+            border-bottom:3px solid #2E7D32;
+        }
+
         .container {
             max-width:600px;
             margin:20px auto;
@@ -105,9 +111,10 @@
 <nav>
     <div class="tab-scroll">
         <a href="home.html">ホーム</a>
+        <a href="about.html">このサイトについて</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
+        <a href="notifications.html" class="active">🔔 通知</a>
     </div>
 </nav>
 
