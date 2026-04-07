@@ -4,22 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ScoutNet</title>
+
+    <!-- Firebase 8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
 
 <script>
-// ScoutNet トップページ
-// ログイン状態によって自動でページを振り分ける
+// Firebase 設定（ScoutNet12）
+const firebaseConfig = {
+  apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12",
+  storageBucket: "scoutnet12.firebasestorage.app",
+  messagingSenderId: "572737738511",
+  appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
+};
 
-const currentUser = localStorage.getItem("currentUser");
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-if (currentUser) {
-    // ログイン済み → ホームへ
-    location.href = "home.html";
-} else {
-    // 未ログイン → ログインページへ
-    location.href = "login.html";
-}
+// Firebase Auth でログイン判定
+auth.onAuthStateChanged(user => {
+    if (user) {
+        // ログイン済み → ホームへ
+        location.href = "home.html";
+    } else {
+        // 未ログイン → ログインページへ
+        location.href = "login.html";
+    }
+});
 </script>
 
 </body>
