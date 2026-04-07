@@ -19,33 +19,48 @@
             padding:0;
             color:#4E342E;
         }
+
+        /* スライド式タブ */
         nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
             background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
             z-index:100;
+            padding:10px;
         }
-        nav div:last-child {
+
+        nav .tab-scroll {
             display:flex;
-            gap:15px;
             overflow-x:auto;
-            white-space: nowrap;
+            white-space:nowrap;
+            gap:15px;
         }
+
+        nav .tab-scroll::-webkit-scrollbar {
+            display:none;
+        }
+
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
+            padding:8px 4px;
+            display:inline-block;
         }
+
+        /* 選択中タブ（緑） */
+        nav a.active {
+            color:#2E7D32;
+            border-bottom:3px solid #2E7D32;
+        }
+
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
+
         .form-box {
             background:white;
             border:2px solid #D7C4A3;
@@ -53,11 +68,13 @@
             padding:20px;
             box-shadow:0 4px 0 #D7C4A3;
         }
+
         label {
             font-weight:600;
             margin-top:12px;
             display:block;
         }
+
         input, textarea, select {
             width:100%;
             padding:10px;
@@ -66,9 +83,11 @@
             border:1px solid #CCC;
             font-size:15px;
         }
+
         textarea {
             height:120px;
         }
+
         #postBtn {
             width:100%;
             background:#2E7D32;
@@ -83,12 +102,12 @@
             box-shadow:0 3px 0 #1B5E20;
             transition:0.1s;
         }
+
         #postBtn:active {
             transform: scale(0.97);
             opacity: 0.8;
         }
 
-        /* ローディング表示 */
         #loading {
             display:none;
             text-align:center;
@@ -102,14 +121,10 @@
 <body>
 
 <nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div>
+    <div class="tab-scroll">
         <a href="home.html">ホーム</a>
         <a href="about.html">このサイトについて</a>
-        <a href="newpost.html">投稿する</a>
+        <a href="newpost.html" class="active">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
     </div>
@@ -144,7 +159,7 @@
 </div>
 
 <script>
-/* ポップアップ（共通） */
+/* ポップアップ */
 function showPopup(message) {
     const msg = document.createElement("div");
     msg.style.position = "fixed";
@@ -180,9 +195,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* ログイン確認 */
 let currentUser = null;
 
+/* ログイン確認 */
 auth.onAuthStateChanged(user => {
     if (!user) {
         location.href = "login.html";
@@ -238,7 +253,7 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     const fileURLs = await Promise.all(uploadFileTasks);
 
     /* Firestore に投稿を追加 */
-    const postRef = await db.collection("posts").add({
+    await db.collection("posts").add({
         title,
         description,
         category,
@@ -253,7 +268,6 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         postCount: firebase.firestore.FieldValue.increment(1)
     });
 
-    /* 投稿完了ポップアップ */
     showPopup("投稿が完了しました！");
 
     setTimeout(() => {
