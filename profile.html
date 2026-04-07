@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
         body {
@@ -54,19 +55,24 @@
 
         .label {
             font-weight:700;
-            margin-top:10px;
+            margin-top:15px;
         }
 
-        .value {
-            margin-bottom:10px;
-        }
-
-        .edit-input {
+        .input {
             width:100%;
             padding:10px;
             border:1px solid #D7C4A3;
             border-radius:8px;
             margin-top:5px;
+        }
+
+        .icon-preview {
+            width:120px;
+            height:120px;
+            border-radius:50%;
+            object-fit:cover;
+            background:#ddd;
+            margin-top:10px;
         }
 
         .save-btn {
@@ -78,21 +84,8 @@
             border-radius:10px;
             font-weight:700;
             cursor:pointer;
-            margin-top:15px;
-            box-shadow:0 3px 0 #1B5E20;
-        }
-
-        .logout-btn {
-            width:100%;
-            padding:14px;
-            background:#c62828;
-            color:white;
-            border:none;
-            border-radius:10px;
-            font-weight:700;
-            cursor:pointer;
             margin-top:20px;
-            box-shadow:0 3px 0 #8e0000;
+            box-shadow:0 3px 0 #1B5E20;
         }
     </style>
 </head>
@@ -113,28 +106,25 @@
 
 <div class="container">
     <div class="card">
-        <h2>プロフィール</h2>
+        <h2>プロフィール編集</h2>
+
+        <div class="label">アイコン</div>
+        <img id="iconPreview" class="icon-preview">
+        <input type="file" id="iconInput" accept="image/*" class="input">
 
         <div class="label">名前</div>
-        <input id="nameInput" class="edit-input" placeholder="名前を入力">
+        <input id="nameInput" class="input">
 
-        <div class="label">メールアドレス</div>
-        <div id="userEmail" class="value">読み込み中…</div>
+        <div class="label">所属団</div>
+        <input id="groupInput" class="input">
 
-        <div class="label">UID</div>
-        <div id="userUid" class="value">読み込み中…</div>
+        <div class="label">県</div>
+        <input id="prefInput" class="input">
 
-        <div class="label">投稿数</div>
-        <div id="postCount" class="value">読み込み中…</div>
-
-        <div class="label">いいねした数</div>
-        <div id="likeCount" class="value">読み込み中…</div>
-
-        <div class="label">コメントした数</div>
-        <div id="commentCount" class="value">読み込み中…</div>
+        <div class="label">自己紹介</div>
+        <textarea id="bioInput" class="input" rows="4"></textarea>
 
         <button id="saveBtn" class="save-btn">保存する</button>
-        <button id="logoutBtn" class="logout-btn">ログアウト</button>
     </div>
 </div>
 
@@ -152,6 +142,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
+
+let currentUser = null;
 
 /* ログイン確認 */
 auth.onAuthStateChanged(async (user) => {
@@ -160,61 +153,58 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    document.getElementById("userEmail").textContent = user.email;
-    document.getElementById("userUid").textContent = user.uid;
+    currentUser = user.uid;
 
-    /* Firestore からユーザー情報取得 */
-    const userRef = db.collection("users").doc(user.uid);
-    const snap = await userRef.get();
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get();
 
     if (snap.exists) {
-        document.getElementById("nameInput").value = snap.data().name;
-    } else {
-        /* 初回ログインなら自動作成 */
-        await userRef.set({
-            name: "名前未設定",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        document.getElementById("nameInput").value = "名前未設定";
+        const data = snap.data();
+
+        document.getElementById("nameInput").value = data.name || "";
+        document.getElementById("groupInput").value = data.group || "";
+        document.getElementById("prefInput").value = data.pref || "";
+        document.getElementById("bioInput").value = data.bio || "";
+
+        if (data.iconUrl) {
+            document.getElementById("iconPreview").src = data.iconUrl;
+        }
     }
-
-    /* 投稿数 */
-    const posts = await db.collection("posts")
-        .where("createdBy", "==", user.uid)
-        .get();
-    document.getElementById("postCount").textContent = posts.size + " 件";
-
-    /* いいね数 */
-    const likes = await db.collectionGroup("likes")
-        .where("user", "==", user.uid)
-        .get();
-    document.getElementById("likeCount").textContent = likes.size + " 件";
-
-    /* コメント数 */
-    const comments = await db.collectionGroup("comments")
-        .where("user", "==", user.uid)
-        .get();
-    document.getElementById("commentCount").textContent = comments.size + " 件";
 });
+
+/* アイコンプレビュー */
+document.getElementById("iconInput").onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        document.getElementById("iconPreview").src = URL.createObjectURL(file);
+    }
+};
 
 /* 保存 */
 document.getElementById("saveBtn").onclick = async () => {
-    const user = auth.currentUser;
     const name = document.getElementById("nameInput").value.trim();
+    const group = document.getElementById("groupInput").value.trim();
+    const pref = document.getElementById("prefInput").value.trim();
+    const bio = document.getElementById("bioInput").value.trim();
 
-    if (!name) return alert("名前を入力してください");
+    let iconUrl = null;
 
-    await db.collection("users").doc(user.uid).update({
-        name: name
+    const file = document.getElementById("iconInput").files[0];
+    if (file) {
+        const path = `icons/${currentUser}.jpg`;
+        await storage.ref(path).put(file);
+        iconUrl = await storage.ref(path).getDownloadURL();
+    }
+
+    await db.collection("users").doc(currentUser).update({
+        name,
+        group,
+        pref,
+        bio,
+        ...(iconUrl && { iconUrl })
     });
 
     alert("保存しました！");
-};
-
-/* ログアウト */
-document.getElementById("logoutBtn").onclick = async () => {
-    await auth.signOut();
-    location.href = "login.html";
 };
 </script>
 
