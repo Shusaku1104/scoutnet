@@ -246,13 +246,13 @@ document.getElementById("saveBtn").onclick = async () => {
         iconUrl = await storage.ref(path).getDownloadURL();
     }
 
-    await db.collection("users").doc(currentUser).update({
+    await db.collection("users").doc(currentUser).set({
         name,
         group,
         pref,
         bio,
         ...(iconUrl && { iconUrl })
-    });
+    }, { merge: true });
 
     alert("変更が完了しました！");
 };
