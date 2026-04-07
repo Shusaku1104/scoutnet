@@ -27,7 +27,6 @@
             z-index:100;
         }
 
-        /* 右側だけ横スクロール */
         nav div:last-child {
             display:flex;
             gap:15px;
@@ -35,16 +34,22 @@
             -webkit-overflow-scrolling: touch;
             white-space: nowrap;
             min-width: max-content;
+            padding-right:10px;
         }
 
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
+            transition:0.1s;
+        }
+        nav a:active {
+            transform: scale(0.95);
+            opacity: 0.8;
         }
 
         .container {
-            padding:40px 20px;
+            padding:30px 20px;
             text-align:center;
         }
 
