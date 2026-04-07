@@ -312,9 +312,13 @@ postRef.get().then(async (snap) => {
     });
 
     /* 投稿者なら削除ボタン表示 */
-    if (post.createdBy === currentUser) {
-        document.getElementById("deleteBtn").style.display = "block";
-    }
+    // 管理者UID（周作）
+const ADMIN_UID = "51LQrBx2m5Pru43eIQOdVUtlkXC3";
+
+// 投稿者 or 管理者なら削除ボタンを表示
+if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
+    document.getElementById("deleteBtn").style.display = "block";
+}
 
     /* 画像スライダー */
     const slideImage = document.getElementById("slideImage");
