@@ -49,6 +49,11 @@
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
+            transition:0.1s;
+        }
+        .btn:active {
+            transform: scale(0.97);
+            opacity: 0.8;
         }
         .link {
             text-align:center;
@@ -78,6 +83,27 @@
 </div>
 
 <script>
+/* ポップアップ（共通） */
+function showPopup(message) {
+    const msg = document.createElement("div");
+    msg.style.position = "fixed";
+    msg.style.top = "50%";
+    msg.style.left = "50%";
+    msg.style.transform = "translate(-50%, -50%)";
+    msg.style.background = "white";
+    msg.style.padding = "20px 30px";
+    msg.style.borderRadius = "12px";
+    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    msg.style.fontSize = "20px";
+    msg.style.fontWeight = "700";
+    msg.style.color = "#2E7D32";
+    msg.style.zIndex = "9999";
+    msg.innerText = message;
+
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+}
+
 /* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
@@ -99,19 +125,23 @@ document.getElementById("signupBtn").onclick = async () => {
     const pw2 = document.getElementById("password2").value.trim();
 
     if (!email || !pw || !pw2) {
-        alert("すべての項目を入力してください");
+        showPopup("入力が不足しています");
         return;
     }
 
     if (pw.length < 6) {
-        alert("パスワードは6文字以上にしてください");
+        showPopup("パスワードは6文字以上です");
         return;
     }
 
     if (pw !== pw2) {
-        alert("パスワードが一致していません");
+        showPopup("パスワードが一致しません");
         return;
     }
+
+    const btn = document.getElementById("signupBtn");
+    btn.disabled = true;
+    btn.textContent = "登録中…";
 
     try {
         // Firebase Authentication にユーザー作成
@@ -130,14 +160,19 @@ document.getElementById("signupBtn").onclick = async () => {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // ★ UID を保存（重要）
+        // UID 保存
         localStorage.setItem("currentUser", uid);
 
-        alert("登録が完了しました！");
-        location.href = "home.html";
+        showPopup("登録が完了しました！");
+
+        setTimeout(() => {
+            location.href = "home.html";
+        }, 1500);
 
     } catch (error) {
-        alert("エラー：" + error.message);
+        btn.disabled = false;
+        btn.textContent = "登録する";
+        showPopup("エラー：" + error.message);
     }
 };
 </script>
