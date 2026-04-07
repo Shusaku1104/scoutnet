@@ -5,6 +5,11 @@
     <title>ScoutNet - 通知</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Firebase v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         body {
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
@@ -26,17 +31,16 @@
             z-index:100;
         }
 
-        nav div:last-child {
-            display:flex;
-            gap:15px;
-            overflow-x:auto;
-            white-space: nowrap;
-        }
-
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
+            margin-left:15px;
+            transition:0.1s;
+        }
+        nav a:active {
+            transform:scale(0.95);
+            opacity:0.8;
         }
 
         .container {
@@ -45,13 +49,26 @@
             padding:0 15px;
         }
 
+        #loading {
+            text-align:center;
+            margin-top:40px;
+            font-size:18px;
+            color:#777;
+        }
+
         .notice-card {
             background:white;
             padding:15px;
             margin-bottom:12px;
-            border-radius:10px;
-            border:1px solid #D7C4A3;
+            border-radius:12px;
+            border:2px solid #D7C4A3;
+            box-shadow:0 4px 0 #D7C4A3;
             cursor:pointer;
+            transition:0.1s;
+        }
+        .notice-card:active {
+            transform:scale(0.98);
+            box-shadow:0 2px 0 #BCA68A;
         }
 
         .notice-row {
@@ -60,7 +77,7 @@
         }
 
         .notice-icon {
-            font-size:22px;
+            font-size:24px;
             margin-right:10px;
         }
 
@@ -68,6 +85,13 @@
             font-size:12px;
             color:#6d6d6d;
             margin-top:5px;
+        }
+
+        .empty {
+            text-align:center;
+            margin-top:40px;
+            font-size:16px;
+            color:#777;
         }
     </style>
 </head>
@@ -89,13 +113,10 @@
 
 <div class="container">
     <h2>通知一覧</h2>
+
+    <div id="loading">読み込み中…</div>
     <div id="notifications"></div>
 </div>
-
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script>
 /* Firebase 設定 */
@@ -116,8 +137,7 @@ const db = firebase.firestore();
 function timeAgo(timestamp) {
     if (!timestamp) return "";
     const t = timestamp.toMillis ? timestamp.toMillis() : timestamp;
-    const now = Date.now();
-    const diff = now - t;
+    const diff = Date.now() - t;
 
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return "たった今";
@@ -133,7 +153,6 @@ function timeAgo(timestamp) {
 /* 通知読み込み */
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
-        alert("ログインしてください");
         location.href = "login.html";
         return;
     }
@@ -144,31 +163,49 @@ auth.onAuthStateChanged(async (user) => {
         .onSnapshot(async (snapshot) => {
 
             const box = document.getElementById("notifications");
+            const loading = document.getElementById("loading");
+
+            loading.style.display = "none";
             box.innerHTML = "";
 
-            for (const doc of snapshot.docs) {
-                const data = doc.data();
+            if (snapshot.empty) {
+                box.innerHTML = `
+                    <p class="empty">
+                        通知はまだありません<br>
+                        <a href="home.html" style="color:#2E7D32; font-weight:700;">投稿を見に行く</a>
+                    </p>`;
+                return;
+            }
 
-                /* from のユーザー名取得 */
-                const userSnap = await db.collection("users").doc(data.from).get();
-                const fromName = userSnap.exists ? userSnap.data().name : "不明なユーザー";
+            /* from のユーザーIDをまとめて取得 */
+            const userIds = [...new Set(snapshot.docs.map(doc => doc.data().from))];
+
+            const userSnaps = await Promise.all(
+                userIds.map(uid => db.collection("users").doc(uid).get())
+            );
+
+            const userMap = {};
+            userSnaps.forEach((snap, i) => {
+                userMap[userIds[i]] = snap.exists ? snap.data().name : "不明なユーザー";
+            });
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const fromName = userMap[data.from] || "不明なユーザー";
 
                 let icon = "";
                 let message = "";
 
-                /* いいね通知 */
                 if (data.type === "like") {
                     icon = "❤️";
                     message = `${fromName} さんがあなたの投稿にいいねしました`;
                 }
 
-                /* コメント通知 */
                 if (data.type === "comment") {
                     icon = "💬";
                     message = `${fromName} さんがあなたの投稿にコメントしました`;
                 }
 
-                /* 新規投稿通知（今回追加） */
                 if (data.type === "newpost") {
                     icon = "🆕";
                     message = `${fromName} さんが新しい投稿を追加しました`;
@@ -185,14 +222,16 @@ auth.onAuthStateChanged(async (user) => {
                     <div class="notice-time">${timeAgo(data.createdAt)}</div>
                 `;
 
-                card.onclick = () => {
+                /* 既読処理 */
+                card.onclick = async () => {
                     if (data.postId) {
-                        location.href = \`post.html?id=\${data.postId}\`;
+                        await doc.ref.update({ read: true });
+                        location.href = `post.html?id=${data.postId}`;
                     }
                 };
 
                 box.appendChild(card);
-            }
+            });
         });
 });
 </script>
