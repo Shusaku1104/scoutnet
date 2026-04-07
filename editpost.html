@@ -201,6 +201,34 @@ auth.onAuthStateChanged(async (user) => {
     loadPost();
 });
 
+/* 画像一覧の描画だけを行う関数 */
+function renderImages() {
+    const container = document.getElementById("currentImages");
+    container.innerHTML = "";
+
+    originalImages.forEach((url, index) => {
+        const box = document.createElement("div");
+        box.className = "preview-box";
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.className = "preview-img";
+
+        const btn = document.createElement("button");
+        btn.className = "remove-btn";
+        btn.textContent = "この画像を削除";
+        btn.onclick = () => {
+            // indexズレを防ぐため filter で再生成
+            originalImages = originalImages.filter((_, i) => i !== index);
+            renderImages();
+        };
+
+        box.appendChild(img);
+        box.appendChild(btn);
+        container.appendChild(box);
+    });
+}
+
 /* 投稿読み込み */
 async function loadPost() {
     const snap = await postRef.get();
@@ -223,30 +251,7 @@ async function loadPost() {
     document.getElementById("category").value = post.category;
 
     originalImages = post.images || [];
-
-    const container = document.getElementById("currentImages");
-    container.innerHTML = "";
-
-    originalImages.forEach((url, index) => {
-        const box = document.createElement("div");
-        box.className = "preview-box";
-
-        const img = document.createElement("img");
-        img.src = url;
-        img.className = "preview-img";
-
-        const btn = document.createElement("button");
-        btn.className = "remove-btn";
-        btn.textContent = "この画像を削除";
-        btn.onclick = () => {
-            originalImages.splice(index, 1);
-            loadPost(); // 再描画
-        };
-
-        box.appendChild(img);
-        box.appendChild(btn);
-        container.appendChild(box);
-    });
+    renderImages();
 }
 
 /* 更新処理 */
