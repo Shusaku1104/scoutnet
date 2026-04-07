@@ -14,38 +14,39 @@
             color: #4E342E;
         }
 
-        /* ナビバー */
+        /* スライド式タブ */
         nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
             background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
             z-index:100;
+            padding:10px;
         }
 
-        nav div:last-child {
+        nav .tab-scroll {
             display:flex;
-            gap:15px;
             overflow-x:auto;
-            -webkit-overflow-scrolling: touch;
-            white-space: nowrap;
-            min-width: max-content;
-            padding-right:10px;
+            white-space:nowrap;
+            gap:15px;
+        }
+
+        nav .tab-scroll::-webkit-scrollbar {
+            display:none;
         }
 
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            transition:0.1s;
+            padding:8px 4px;
+            display:inline-block;
         }
-        nav a:active {
-            transform: scale(0.95);
-            opacity: 0.8;
+
+        /* 選択中タブ（緑） */
+        nav a.active {
+            color:#2E7D32;
+            border-bottom:3px solid #2E7D32;
         }
 
         .container {
@@ -83,15 +84,11 @@
 </head>
 <body>
 
-<!-- ナビバー -->
+<!-- 新しいスライド式タブ -->
 <nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div>
+    <div class="tab-scroll">
         <a href="home.html">ホーム</a>
-        <a href="about.html">このサイトについて</a>
+        <a href="about.html" class="active">このサイトについて</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
