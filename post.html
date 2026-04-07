@@ -228,7 +228,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
   projectId: "scoutnet12",
-  storageBucket: "scoutnet12.appspot.com",
+  storageBucket: "scoutnet12.firebasestorage.app",
   messagingSenderId: "572737738511",
   appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
 };
@@ -237,14 +237,37 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-const currentUser = localStorage.getItem("currentUser");
-if (!currentUser) location.href = "login.html";
+let currentUser = null;
+
+firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+    currentUser = user.uid;
+});
 
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 
 const postRef = db.collection("posts").doc(postId);
-const likeRef = postRef.collection("likes").doc(currentUser);
+let likeRef = null;
+
+firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+    currentUser = user.uid;
+
+    // ← ここで初めて likeRef を作る（正しいタイミング）
+    likeRef = postRef.collection("likes").doc(currentUser);
+
+    // いいね状態の監視もここで開始
+    likeRef.onSnapshot((snap) => {
+        document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
+    });
+});
 
 let postData = null;
 
@@ -442,6 +465,10 @@ document.getElementById("deleteBtn").onclick = async () => {
     location.href = "home.html";
 };
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
