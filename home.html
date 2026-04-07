@@ -166,24 +166,12 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/* 🔥 永続化（currentUser が確実に読み込まれる） */
+/* ログイン確認 */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-/* 🔥 ログイン確認（読み込み前の null で飛ばさない） */
 auth.onAuthStateChanged(user => {
-    console.log("home.html onAuthStateChanged:", user);
-
-    if (user === null) {
-        console.log("読み込み中…");
-        return;
-    }
-
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-
-    console.log("ログイン済み:", user.uid);
+    if (user === null) return; // 読み込み中
+    if (!user) location.href = "login.html";
 });
 
 /* UI */
@@ -215,7 +203,7 @@ document.querySelectorAll(".category-item").forEach(item => {
     });
 });
 
-/* 投稿読み込み */
+/* 投稿読み込み（安全版） */
 async function loadPosts(direction = "none") {
     postList.innerHTML = "";
 
@@ -225,13 +213,8 @@ async function loadPosts(direction = "none") {
         ref = ref.where("category", "==", currentCategory).orderBy("createdAt", "desc");
     }
 
-    if (direction === "next" && lastDoc) {
-        ref = ref.startAfter(lastDoc);
-    }
-
-    if (direction === "prev" && firstDoc) {
-        ref = ref.endBefore(firstDoc);
-    }
+    if (direction === "next" && lastDoc) ref = ref.startAfter(lastDoc);
+    if (direction === "prev" && firstDoc) ref = ref.endBefore(firstDoc);
 
     const snap = await ref.limit(perPage).get();
 
@@ -250,28 +233,32 @@ async function loadPosts(direction = "none") {
         const div = document.createElement("div");
         div.className = "post";
 
+        /* 画像 */
         if (post.images && post.images.length > 0) {
             const img = document.createElement("img");
             img.src = post.images[0];
             div.appendChild(img);
         }
 
+        /* カテゴリ */
         const tag = document.createElement("div");
         tag.className = "category-tag";
         tag.textContent = post.category;
         div.appendChild(tag);
 
+        /* タイトル */
         const title = document.createElement("div");
         title.className = "title";
         title.textContent = post.title;
+        div.appendChild(title);
 
+        /* 説明（XSS防止済み） */
         const desc = document.createElement("div");
         desc.className = "desc";
-        desc.textContent = post.description;
-
-        div.appendChild(title);
+        desc.textContent = post.description; // ← textContent なので安全
         div.appendChild(desc);
 
+        /* クリックで詳細へ */
         div.addEventListener("click", () => {
             location.href = "post.html?id=" + id;
         });
