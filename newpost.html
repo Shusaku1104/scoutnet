@@ -81,6 +81,20 @@
             margin-top:20px;
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
+            transition:0.1s;
+        }
+        #postBtn:active {
+            transform: scale(0.97);
+            opacity: 0.8;
+        }
+
+        /* ローディング表示 */
+        #loading {
+            display:none;
+            text-align:center;
+            margin-top:20px;
+            font-size:16px;
+            color:#777;
         }
     </style>
 </head>
@@ -124,10 +138,33 @@
         <input type="file" id="files" multiple accept=".doc,.docx,.pdf,.txt,.zip,.ppt,.pptx,.xls,.xlsx">
 
         <button id="postBtn">投稿する</button>
+
+        <div id="loading">投稿中… 少しお待ちください</div>
     </div>
 </div>
 
 <script>
+/* ポップアップ（共通） */
+function showPopup(message) {
+    const msg = document.createElement("div");
+    msg.style.position = "fixed";
+    msg.style.top = "50%";
+    msg.style.left = "50%";
+    msg.style.transform = "translate(-50%, -50%)";
+    msg.style.background = "white";
+    msg.style.padding = "20px 30px";
+    msg.style.borderRadius = "12px";
+    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    msg.style.fontSize = "20px";
+    msg.style.fontWeight = "700";
+    msg.style.color = "#2E7D32";
+    msg.style.zIndex = "9999";
+    msg.innerText = message;
+
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+}
+
 /* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
@@ -143,7 +180,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* 🔥 ログイン確認 */
+/* ログイン確認 */
 let currentUser = null;
 
 auth.onAuthStateChanged(user => {
@@ -161,28 +198,25 @@ const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now(
 document.getElementById("postBtn").addEventListener("click", async () => {
 
     if (!currentUser) {
-        alert("ログイン情報を確認中です。少し待ってください。");
+        showPopup("ログイン情報を確認中です");
         return;
     }
 
-    const userRef = db.collection("users").doc(currentUser);
-    const userSnap = await userRef.get();
-
-    const postCount = userSnap.data()?.postCount || 0;
-
-    if (postCount >= 190) {
-        alert("投稿上限の190件に達しています！");
-        return;
-    }
+    const btn = document.getElementById("postBtn");
+    const loading = document.getElementById("loading");
 
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
 
     if (!title || !description) {
-        alert("タイトルと説明文は必須です");
+        showPopup("タイトルと説明文は必須です");
         return;
     }
+
+    btn.disabled = true;
+    btn.textContent = "投稿中…";
+    loading.style.display = "block";
 
     const imageFiles = document.getElementById("images").files;
     const otherFiles = document.getElementById("files").files;
@@ -214,49 +248,17 @@ document.getElementById("postBtn").addEventListener("click", async () => {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    /* 投稿数を +1 */
-    await userRef.update({
+    /* 投稿数 +1 */
+    await db.collection("users").doc(currentUser).update({
         postCount: firebase.firestore.FieldValue.increment(1)
     });
 
-    /* 通知を全ユーザーに送信 */
-    const usersSnap = await db.collection("users").get();
-    const postId = postRef.id;
-
-    usersSnap.forEach(u => {
-        const uid = u.id;
-        if (uid === currentUser) return;
-
-        db.collection("notifications").add({
-            to: uid,
-            from: currentUser,
-            type: "newpost",
-            postId,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    });
-
-    /* 🔥 投稿完了 → 自動でホームへ戻る */
-    const msg = document.createElement("div");
-    msg.style.position = "fixed";
-    msg.style.top = "50%";
-    msg.style.left = "50%";
-    msg.style.transform = "translate(-50%, -50%)";
-    msg.style.background = "white";
-    msg.style.padding = "20px 30px";
-    msg.style.borderRadius = "12px";
-    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
-    msg.style.fontSize = "18px";
-    msg.style.fontWeight = "600";
-    msg.style.color = "#2E7D32";
-    msg.innerText = "投稿が完了しました！\nホームに戻ります…";
-
-    document.body.appendChild(msg);
+    /* 投稿完了ポップアップ */
+    showPopup("投稿が完了しました！");
 
     setTimeout(() => {
         location.href = "home.html";
     }, 1500);
-
 });
 </script>
 
