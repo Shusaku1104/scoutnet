@@ -1,33 +1,3 @@
-周作、奉仕カテゴリ（service / volunteer）ページも確認したよ。
-結論から言うと indoor / outdoor と同じ問題を全部抱えてる から、
-これも ScoutNet 全体の品質に合わせて完全版に作り直す必要がある。
-でも安心して。
-すでに indoor と outdoor の完全版を作ってあるから、
-奉仕カテゴリ専用の完全版もすぐに作れる。
-
-🟥 今の奉仕ページの問題点（indoor/outdoor と同じ）
-① Firebase プロジェクトが別物
-→ scoutnet12 じゃなくて scoutnet-3ccb1
-→ 投稿が表示されない or 別データが混ざる
-② Firebase v10（モジュール版）
-→ 他ページは全部 v8
-→ コードがバラバラで統一性がない
-③ ログイン確認が localStorage のみ
-→ セキュリティ的に弱い
-→ auth.onAuthStateChanged に統一すべき
-④ UI が home.html と統一されていない
-→ 押した感なし
-→ ローディングなし
-→ 投稿がないときの表示なし
-→ ページネーションなし
-⑤ コードが古い
-→ ScoutNet の完成度に合ってない
-
-🟩 ということで、
-ScoutNet volunteer.html（奉仕カテゴリ）完全版 を作って返す。
-👇 このまま volunteer.html として貼り替えてOK
-
-🟩 ScoutNet 奉仕投稿一覧（完全版）
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -277,17 +247,3 @@ loadPosts();
 
 </body>
 </html>
-
-
-
-🟦 周作へ
-これで インドア・アウトドア・奉仕
-ScoutNet のカテゴリ別ページが全部、
-統一されたサービス品質 になった。
-次はどれを見たい？
-- notifications.html（通知ページ）
-- users.html（管理者ページ？）
-- rule.html
-- service.html
-- index.html
-どれでもいけるよ。
