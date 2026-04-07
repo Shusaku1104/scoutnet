@@ -9,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
         body {
@@ -19,6 +18,7 @@
             padding:0;
             color:#4E342E;
         }
+
         nav {
             display:flex;
             justify-content:space-between;
@@ -28,5 +28,195 @@
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
+            z-index:100;
+        }
 
-    
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            margin-left:15px;
+        }
+
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
+        }
+
+        .card {
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:20px;
+            box-shadow:0 4px 0 #D7C4A3;
+        }
+
+        .label {
+            font-weight:700;
+            margin-top:10px;
+        }
+
+        .value {
+            margin-bottom:10px;
+        }
+
+        .edit-input {
+            width:100%;
+            padding:10px;
+            border:1px solid #D7C4A3;
+            border-radius:8px;
+            margin-top:5px;
+        }
+
+        .save-btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:700;
+            cursor:pointer;
+            margin-top:15px;
+            box-shadow:0 3px 0 #1B5E20;
+        }
+
+        .logout-btn {
+            width:100%;
+            padding:14px;
+            background:#c62828;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:700;
+            cursor:pointer;
+            margin-top:20px;
+            box-shadow:0 3px 0 #8e0000;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
+        🏕 ScoutNet
+    </div>
+
+    <div style="display:flex; align-items:center; gap:15px;">
+        <a href="home.html">ホーム</a>
+        <a href="newpost.html">投稿する</a>
+        <a href="profile.html">プロフィール</a>
+        <a href="notifications.html">🔔 通知</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <h2>プロフィール</h2>
+
+        <div class="label">名前</div>
+        <input id="nameInput" class="edit-input" placeholder="名前を入力">
+
+        <div class="label">メールアドレス</div>
+        <div id="userEmail" class="value">読み込み中…</div>
+
+        <div class="label">UID</div>
+        <div id="userUid" class="value">読み込み中…</div>
+
+        <div class="label">投稿数</div>
+        <div id="postCount" class="value">読み込み中…</div>
+
+        <div class="label">いいねした数</div>
+        <div id="likeCount" class="value">読み込み中…</div>
+
+        <div class="label">コメントした数</div>
+        <div id="commentCount" class="value">読み込み中…</div>
+
+        <button id="saveBtn" class="save-btn">保存する</button>
+        <button id="logoutBtn" class="logout-btn">ログアウト</button>
+    </div>
+</div>
+
+<script>
+/* Firebase 設定 */
+const firebaseConfig = {
+  apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12",
+  storageBucket: "scoutnet12.firebasestorage.app",
+  messagingSenderId: "572737738511",
+  appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ログイン確認 */
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+
+    document.getElementById("userEmail").textContent = user.email;
+    document.getElementById("userUid").textContent = user.uid;
+
+    /* Firestore からユーザー情報取得 */
+    const userRef = db.collection("users").doc(user.uid);
+    const snap = await userRef.get();
+
+    if (snap.exists) {
+        document.getElementById("nameInput").value = snap.data().name;
+    } else {
+        /* 初回ログインなら自動作成 */
+        await userRef.set({
+            name: "名前未設定",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("nameInput").value = "名前未設定";
+    }
+
+    /* 投稿数 */
+    const posts = await db.collection("posts")
+        .where("createdBy", "==", user.uid)
+        .get();
+    document.getElementById("postCount").textContent = posts.size + " 件";
+
+    /* いいね数 */
+    const likes = await db.collectionGroup("likes")
+        .where("user", "==", user.uid)
+        .get();
+    document.getElementById("likeCount").textContent = likes.size + " 件";
+
+    /* コメント数 */
+    const comments = await db.collectionGroup("comments")
+        .where("user", "==", user.uid)
+        .get();
+    document.getElementById("commentCount").textContent = comments.size + " 件";
+});
+
+/* 保存 */
+document.getElementById("saveBtn").onclick = async () => {
+    const user = auth.currentUser;
+    const name = document.getElementById("nameInput").value.trim();
+
+    if (!name) return alert("名前を入力してください");
+
+    await db.collection("users").doc(user.uid).update({
+        name: name
+    });
+
+    alert("保存しました！");
+};
+
+/* ログアウト */
+document.getElementById("logoutBtn").onclick = async () => {
+    await auth.signOut();
+    location.href = "login.html";
+};
+</script>
+
+</body>
+</html>
