@@ -7,6 +7,7 @@
 
     <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
@@ -81,6 +82,10 @@
             font-size: 20px;
             cursor: pointer;
             border-radius: 50%;
+            transition:0.1s;
+        }
+        .slide-btn:active {
+            transform: translateY(-50%) scale(0.9);
         }
 
         #prevBtn { left: 10px; }
@@ -113,6 +118,10 @@
             cursor:pointer;
             user-select:none;
             margin-top:10px;
+            transition:0.1s;
+        }
+        .like-btn:active {
+            transform: scale(0.8);
         }
 
         .like-count {
@@ -132,6 +141,10 @@
             font-weight:600;
             cursor:pointer;
             box-shadow:0 3px 0 #8e0000;
+            transition:0.1s;
+        }
+        .delete-btn:active {
+            transform: scale(0.97);
         }
 
         .comment {
@@ -166,6 +179,10 @@
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
             margin-top:10px;
+            transition:0.1s;
+        }
+        .btn:active {
+            transform: scale(0.97);
         }
     </style>
 </head>
@@ -223,7 +240,28 @@
 </div>
 
 <script>
-/* Firebase 設定（完全版） */
+/* ポップアップ（共通） */
+function showPopup(message) {
+    const msg = document.createElement("div");
+    msg.style.position = "fixed";
+    msg.style.top = "50%";
+    msg.style.left = "50%";
+    msg.style.transform = "translate(-50%, -50%)";
+    msg.style.background = "white";
+    msg.style.padding = "20px 30px";
+    msg.style.borderRadius = "12px";
+    msg.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+    msg.style.fontSize = "20px";
+    msg.style.fontWeight = "700";
+    msg.style.color = "#2E7D32";
+    msg.style.zIndex = "9999";
+    msg.innerText = message;
+
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
+}
+
+/* Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -234,44 +272,43 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
 /* 管理者UID（周作） */
 const ADMIN_UID = "51LQrBx2m5Pru43eIQOdVUtlkXC3";
 
-/* ログイン確認 */
-let currentUser = null;
-let likeRef = null;
-
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-    currentUser = user.uid;
-
-    // いいね参照はログイン後に作る
-    likeRef = postRef.collection("likes").doc(currentUser);
-
-    // いいね状態の監視
-    likeRef.onSnapshot((snap) => {
-        document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
-    });
-});
-
 /* 投稿ID取得 */
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 const postRef = db.collection("posts").doc(postId);
 
+let currentUser = null;
 let postData = null;
+let likeRef = null;
+
+/* ログイン確認 */
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        location.href = "login.html";
+        return;
+    }
+
+    currentUser = user.uid;
+    likeRef = postRef.collection("likes").doc(currentUser);
+
+    /* いいね状態の監視 */
+    likeRef.onSnapshot((snap) => {
+        document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
+    });
+});
 
 /* 投稿読み込み */
 postRef.get().then(async (snap) => {
     if (!snap.exists) {
-        alert("投稿が見つかりません");
-        location.href = "home.html";
+        showPopup("投稿が見つかりません");
+        setTimeout(() => location.href = "home.html", 1500);
         return;
     }
 
@@ -297,12 +334,20 @@ postRef.get().then(async (snap) => {
     const filesDiv = document.getElementById("files");
     (post.files || []).forEach(url => {
         const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
-        filesDiv.innerHTML += `
-            <div class="file">📄 <a href="${url}" target="_blank">${fileName}</a></div>
-        `;
+        const div = document.createElement("div");
+        div.className = "file";
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.textContent = fileName;
+
+        div.appendChild(document.createTextNode("📄 "));
+        div.appendChild(a);
+        filesDiv.appendChild(div);
     });
 
-    /* 🔥 投稿者 or 管理者なら削除ボタン表示 */
+    /* 削除ボタン表示 */
     if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
         document.getElementById("deleteBtn").style.display = "block";
     }
@@ -367,7 +412,7 @@ document.getElementById("likeBtn").onclick = async () => {
     }
 };
 
-/* 💬 コメント読み込み（安全版） */
+/* 💬 コメント読み込み */
 postRef.collection("comments")
     .orderBy("createdAt", "asc")
     .onSnapshot(async (snapshot) => {
@@ -412,6 +457,9 @@ document.getElementById("sendComment").onclick = async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text || !currentUser) return;
 
+    document.getElementById("sendComment").textContent = "送信中…";
+    document.getElementById("sendComment").disabled = true;
+
     await postRef.collection("comments").add({
         text,
         user: currentUser,
@@ -419,6 +467,10 @@ document.getElementById("sendComment").onclick = async () => {
     });
 
     document.getElementById("commentInput").value = "";
+    document.getElementById("sendComment").textContent = "コメントを送信";
+    document.getElementById("sendComment").disabled = false;
+
+    showPopup("コメントを送信しました！");
 
     if (postData.createdBy !== currentUser) {
         await db.collection("notifications").add({
@@ -431,7 +483,7 @@ document.getElementById("sendComment").onclick = async () => {
     }
 };
 
-/* 🗑 投稿削除（管理者対応済み） */
+/* 🗑 投稿削除 */
 document.getElementById("deleteBtn").onclick = async () => {
     if (!confirm("本当に削除しますか？")) return;
 
@@ -457,13 +509,13 @@ document.getElementById("deleteBtn").onclick = async () => {
 
     await postRef.delete();
 
-    alert("投稿を削除しました");
-    location.href = "home.html";
+    showPopup("投稿を削除しました！");
+
+    setTimeout(() => {
+        location.href = "home.html";
+    }, 1500);
 };
 </script>
-</body>
-</html>
-
 
 </body>
 </html>
