@@ -223,7 +223,7 @@
 </div>
 
 <script>
-/* Firebase 設定 */
+/* Firebase 設定（完全版） */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -237,20 +237,11 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+/* 管理者UID（周作） */
+const ADMIN_UID = "51LQrBx2m5Pru43eIQOdVUtlkXC3";
+
+/* ログイン確認 */
 let currentUser = null;
-
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-        location.href = "login.html";
-        return;
-    }
-    currentUser = user.uid;
-});
-
-const params = new URLSearchParams(location.search);
-const postId = params.get("id");
-
-const postRef = db.collection("posts").doc(postId);
 let likeRef = null;
 
 firebase.auth().onAuthStateChanged(user => {
@@ -260,18 +251,23 @@ firebase.auth().onAuthStateChanged(user => {
     }
     currentUser = user.uid;
 
-    // ← ここで初めて likeRef を作る（正しいタイミング）
+    // いいね参照はログイン後に作る
     likeRef = postRef.collection("likes").doc(currentUser);
 
-    // いいね状態の監視もここで開始
+    // いいね状態の監視
     likeRef.onSnapshot((snap) => {
         document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
     });
 });
 
+/* 投稿ID取得 */
+const params = new URLSearchParams(location.search);
+const postId = params.get("id");
+const postRef = db.collection("posts").doc(postId);
+
 let postData = null;
 
-/* 投稿読み込み（完全版） */
+/* 投稿読み込み */
 postRef.get().then(async (snap) => {
     if (!snap.exists) {
         alert("投稿が見つかりません");
@@ -285,40 +281,31 @@ postRef.get().then(async (snap) => {
     document.getElementById("title").textContent = post.title || "(タイトルなし)";
     document.getElementById("desc").textContent = post.description || "";
 
-    /* createdAt（Timestamp / 数値 / null 全対応） */
-    let createdAt = "";
+    /* 日付処理 */
+    let createdAt = "日時不明";
     if (post.createdAt?.toMillis) {
         createdAt = new Date(post.createdAt.toMillis()).toLocaleString();
-    } else if (typeof post.createdAt === "number") {
-        createdAt = new Date(post.createdAt).toLocaleString();
-    } else {
-        createdAt = "日時不明";
     }
     document.getElementById("date").textContent = createdAt;
 
     /* 投稿者名 */
     const userSnap = await db.collection("users").doc(post.createdBy).get();
-    const authorName = userSnap.exists ? (userSnap.data().name || "名前未設定") : "不明なユーザー";
-    document.getElementById("author").textContent = authorName;
+    document.getElementById("author").textContent =
+        userSnap.exists ? userSnap.data().name : "不明なユーザー";
 
     /* 添付ファイル */
     const filesDiv = document.getElementById("files");
-    const files = post.files || [];
-    files.forEach(url => {
+    (post.files || []).forEach(url => {
         const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
         filesDiv.innerHTML += `
             <div class="file">📄 <a href="${url}" target="_blank">${fileName}</a></div>
         `;
     });
 
-    /* 投稿者なら削除ボタン表示 */
-    // 管理者UID（周作）
-const ADMIN_UID = "51LQrBx2m5Pru43eIQOdVUtlkXC3";
-
-// 投稿者 or 管理者なら削除ボタンを表示
-if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
-    document.getElementById("deleteBtn").style.display = "block";
-}
+    /* 🔥 投稿者 or 管理者なら削除ボタン表示 */
+    if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
+        document.getElementById("deleteBtn").style.display = "block";
+    }
 
     /* 画像スライダー */
     const slideImage = document.getElementById("slideImage");
@@ -349,18 +336,15 @@ if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
     updateSlide();
 });
 
-/* ❤️ いいね状態 */
-likeRef.onSnapshot((snap) => {
-    document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
-});
-
 /* ❤️ いいね数 */
 postRef.collection("likes").onSnapshot((snapshot) => {
     document.getElementById("likeCount").textContent = snapshot.size + "件";
 });
 
-/* ❤️ いいね押したとき（完全版） */
+/* ❤️ いいね押したとき */
 document.getElementById("likeBtn").onclick = async () => {
+    if (!likeRef) return;
+
     const snap = await likeRef.get();
 
     if (snap.exists) {
@@ -383,7 +367,7 @@ document.getElementById("likeBtn").onclick = async () => {
     }
 };
 
-/* 💬 コメント読み込み（高速版） */
+/* 💬 コメント読み込み（安全版） */
 postRef.collection("comments")
     .orderBy("createdAt", "asc")
     .onSnapshot(async (snapshot) => {
@@ -406,19 +390,27 @@ postRef.collection("comments")
             const c = docSnap.data();
             const userName = userMap[c.user] || "不明なユーザー";
 
-            commentsDiv.innerHTML += `
-                <div class="comment">
-                    <div class="comment-user">${userName}</div>
-                    <div>${c.text}</div>
-                </div>
-            `;
+            const commentBox = document.createElement("div");
+            commentBox.className = "comment";
+
+            const userDiv = document.createElement("div");
+            userDiv.className = "comment-user";
+            userDiv.textContent = userName;
+
+            const textDiv = document.createElement("div");
+            textDiv.textContent = c.text;
+
+            commentBox.appendChild(userDiv);
+            commentBox.appendChild(textDiv);
+
+            commentsDiv.appendChild(commentBox);
         });
     });
 
-/* 💬 コメント送信（完全版） */
+/* 💬 コメント送信 */
 document.getElementById("sendComment").onclick = async () => {
     const text = document.getElementById("commentInput").value.trim();
-    if (!text) return;
+    if (!text || !currentUser) return;
 
     await postRef.collection("comments").add({
         text,
@@ -439,7 +431,7 @@ document.getElementById("sendComment").onclick = async () => {
     }
 };
 
-/* 🗑 投稿削除（安全版） */
+/* 🗑 投稿削除（管理者対応済み） */
 document.getElementById("deleteBtn").onclick = async () => {
     if (!confirm("本当に削除しますか？")) return;
 
@@ -469,7 +461,6 @@ document.getElementById("deleteBtn").onclick = async () => {
     location.href = "home.html";
 };
 </script>
-
 </body>
 </html>
 
