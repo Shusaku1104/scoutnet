@@ -53,6 +53,28 @@
             border-radius:16px;
             padding:16px;
             box-shadow:0 4px 0 #D7C4A3;
+            position:relative;
+        }
+
+        /* 右上の編集・削除ボタン */
+        .post-actions {
+            position:absolute;
+            top:10px;
+            right:10px;
+            display:flex;
+            gap:12px;
+        }
+
+        .edit-icon, .delete-icon {
+            font-size:22px;
+            cursor:pointer;
+            opacity:0.85;
+            transition:0.1s;
+        }
+
+        .edit-icon:active, .delete-icon:active {
+            transform:scale(0.85);
+            opacity:0.5;
         }
 
         /* スライダー */
@@ -130,23 +152,6 @@
             color:#555;
         }
 
-        .delete-btn {
-            background:#c62828;
-            color:white;
-            padding:10px;
-            border:none;
-            border-radius:10px;
-            width:100%;
-            margin-top:15px;
-            font-weight:600;
-            cursor:pointer;
-            box-shadow:0 3px 0 #8e0000;
-            transition:0.1s;
-        }
-        .delete-btn:active {
-            transform: scale(0.97);
-        }
-
         .comment {
             background:#fafafa;
             border:1px solid #D7C4A3;
@@ -204,6 +209,12 @@
 <div class="container">
     <div class="post-card">
 
+        <!-- 右上の編集・削除ボタン -->
+        <div class="post-actions" id="postActions" style="display:none;">
+            <span class="edit-icon" id="editBtn">✏️</span>
+            <span class="delete-icon" id="deleteBtn">🗑️</span>
+        </div>
+
         <!-- 画像スライダー -->
         <div class="slider">
             <button class="slide-btn" id="prevBtn">←</button>
@@ -227,8 +238,6 @@
             <span id="likeBtn" class="like-btn">🤍</span>
             <span id="likeCount" class="like-count">0件</span>
         </div>
-
-        <button id="deleteBtn" class="delete-btn" style="display:none;">投稿を削除する</button>
 
         <h3>💬 コメント</h3>
         <div id="comments"></div>
@@ -347,9 +356,17 @@ postRef.get().then(async (snap) => {
         filesDiv.appendChild(div);
     });
 
-    /* 削除ボタン表示 */
+    /* ✏️🗑️ 編集・削除ボタン表示 */
     if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
-        document.getElementById("deleteBtn").style.display = "block";
+        document.getElementById("postActions").style.display = "flex";
+
+        /* 編集ボタン */
+        document.getElementById("editBtn").onclick = () => {
+            location.href = `editpost.html?id=${postId}`;
+        };
+
+        /* 削除ボタン */
+        document.getElementById("deleteBtn").onclick = deletePost;
     }
 
     /* 画像スライダー */
@@ -483,8 +500,8 @@ document.getElementById("sendComment").onclick = async () => {
     }
 };
 
-/* 🗑 投稿削除 */
-document.getElementById("deleteBtn").onclick = async () => {
+/* 🗑 投稿削除（完全版） */
+async function deletePost() {
     if (!confirm("本当に削除しますか？")) return;
 
     /* 画像削除 */
@@ -507,6 +524,22 @@ document.getElementById("deleteBtn").onclick = async () => {
         }
     }
 
+    /* likes 削除 */
+    const likes = await postRef.collection("likes").get();
+    for (const d of likes.docs) await d.ref.delete();
+
+    /* comments 削除 */
+    const comments = await postRef.collection("comments").get();
+    for (const d of comments.docs) await d.ref.delete();
+
+    /* 通知削除 */
+    const noti = await db.collection("notifications")
+        .where("postId", "==", postId)
+        .get();
+
+    for (const d of noti.docs) await d.ref.delete();
+
+    /* 投稿本体削除 */
     await postRef.delete();
 
     showPopup("投稿を削除しました！");
@@ -514,7 +547,7 @@ document.getElementById("deleteBtn").onclick = async () => {
     setTimeout(() => {
         location.href = "home.html";
     }, 1500);
-};
+}
 </script>
 
 </body>
