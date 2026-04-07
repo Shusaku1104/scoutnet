@@ -19,28 +19,33 @@
             color:#4E342E;
         }
 
+        /* スライド式タブ */
         nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
             background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
             top:0;
             z-index:100;
+            padding:10px;
+        }
+
+        nav .tab-scroll {
+            display:flex;
+            overflow-x:auto;
+            white-space:nowrap;
+            gap:15px;
+        }
+
+        nav .tab-scroll::-webkit-scrollbar {
+            display:none;
         }
 
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
-            margin-left:15px;
-            transition:0.1s;
-        }
-        nav a:active {
-            transform:scale(0.95);
-            opacity:0.8;
+            padding:8px 4px;
+            display:inline-block;
         }
 
         .container {
@@ -98,13 +103,8 @@
 <body>
 
 <nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div>
+    <div class="tab-scroll">
         <a href="home.html">ホーム</a>
-        <a href="about.html">このサイトについて</a>
         <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
@@ -226,7 +226,7 @@ auth.onAuthStateChanged(async (user) => {
                 card.onclick = async () => {
                     if (data.postId) {
                         await doc.ref.update({ read: true });
-                        location.href = `post.html?id=${data.postId}`;
+                        location.href = \`post.html?id=\${data.postId}\`;
                     }
                 };
 
