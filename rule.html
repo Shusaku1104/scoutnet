@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>ScoutNet - 利用規約</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <style>
         body {
@@ -29,10 +30,12 @@
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
+            margin-left:15px;
+            transition:0.1s;
         }
-
-        nav a:hover {
-            color:#2E7D32;
+        nav a:active {
+            transform:scale(0.95);
+            opacity:0.8;
         }
 
         .card {
@@ -40,7 +43,8 @@
             padding: 20px;
             border-radius: 16px;
             border: 2px solid #D7C4A3;
-            margin: 20px;
+            margin: 20px auto;
+            max-width: 700px;
             box-shadow: 0 4px 0 #D7C4A3;
         }
 
@@ -52,8 +56,17 @@
             padding-left: 10px;
         }
 
+        h3 {
+            margin-top: 25px;
+            color:#2E7D32;
+            font-weight:700;
+            border-left:4px solid #A5D6A7;
+            padding-left:8px;
+        }
+
         ul {
             line-height: 1.8;
+            padding-left: 20px;
         }
     </style>
 </head>
@@ -66,18 +79,20 @@
 
     <div style="display:flex; gap:18px; font-size:15px; font-weight:600;">
         <a href="index.html">ホーム</a>
-        <a href="post.html">投稿する</a>
+        <a href="newpost.html">投稿する</a>
         <a href="profile.html">プロフィール</a>
         <a href="notifications.html">🔔 通知</a>
-        <a href="rule.html">利用規約</a> <!-- ← 修正済み -->
+        <a href="rule.html">利用規約</a>
     </div>
 </nav>
 
 <div class="card">
     <h2>利用規約</h2>
 
-    <p>ScoutNet（以下「本サービス」）は Shusaku によって個人制作されたサービスです。
-    本サービスを利用する際は、以下の規約に同意したものとみなします。</p>
+    <p>
+        ScoutNet（以下「本サービス」）は Shusaku によって個人制作されたサービスです。
+        本サービスを利用する際は、以下の規約に同意したものとみなします。
+    </p>
 
     <h3>1. 禁止事項</h3>
     <ul>
@@ -110,9 +125,9 @@
 
     <h3>5. データの扱い</h3>
     <ul>
-        <li>本サービスの投稿データはユーザーのブラウザに保存されます</li>
-        <li>サーバーには保存されません</li>
-        <li>ブラウザのデータを削除すると投稿も消えます</li>
+        <li>投稿データ・ユーザーデータは Firebase（Firestore / Storage）に保存されます</li>
+        <li>ブラウザのデータ削除では投稿は消えません</li>
+        <li>サービスの仕様変更によりデータ構造が変わる場合があります</li>
     </ul>
 
     <h3>6. その他</h3>
