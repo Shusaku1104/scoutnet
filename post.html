@@ -418,13 +418,16 @@ postRef.get().then(async (snap) => {
     let currentIndex = 0;
 
     function updateSlide() {
-        if (images.length > 0) {
-            slideImage.src = images[currentIndex];
-            slideImage.style.display = "block";
-        } else {
-            slideImage.style.display = "none";
-        }
+    const slider = document.querySelector(".slider");
+
+    if (images.length > 0) {
+        slideImage.src = images[currentIndex];
+        slideImage.style.display = "block";
+        slider.style.display = "block";   // ← スライダーを表示
+    } else {
+        slider.style.display = "none";    // ← スライダーごと消す
     }
+}
 
     document.getElementById("prevBtn").onclick = () => {
         if (images.length === 0) return;
