@@ -20,7 +20,6 @@
             color:#4E342E;
         }
 
-        /* スライド式タブ */
         nav {
             background:white;
             border-bottom:2px solid #D7C4A3;
@@ -37,19 +36,13 @@
             gap:15px;
         }
 
-        nav .tab-scroll::-webkit-scrollbar {
-            display:none;
-        }
-
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
             padding:8px 4px;
-            display:inline-block;
         }
 
-        /* 選択中タブ（緑色） */
         nav a.active {
             color:#2E7D32;
             border-bottom:3px solid #2E7D32;
@@ -120,7 +113,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>プロフィール編集</h2>
+        <h2 id="profileTitle">プロフィール</h2>
 
         <div class="label">アイコン</div>
         <img id="iconPreview" class="icon-preview">
@@ -207,6 +200,10 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+/* URL の uid を取得（他人のプロフィール対応） */
+const params = new URLSearchParams(location.search);
+const viewUid = params.get("uid"); // null なら自分のプロフィール
+
 let currentUser = null;
 
 /* ログイン確認 */
@@ -218,7 +215,9 @@ auth.onAuthStateChanged(async (user) => {
 
     currentUser = user.uid;
 
-    const ref = db.collection("users").doc(user.uid);
+    const targetUid = viewUid || currentUser; // 他人 or 自分
+
+    const ref = db.collection("users").doc(targetUid);
     const snap = await ref.get();
 
     if (snap.exists) {
@@ -232,6 +231,19 @@ auth.onAuthStateChanged(async (user) => {
         if (data.iconUrl) {
             document.getElementById("iconPreview").src = data.iconUrl;
         }
+    }
+
+    /* 他人のプロフィールなら編集不可にする */
+    if (viewUid && viewUid !== currentUser) {
+        document.getElementById("profileTitle").textContent = "プロフィール（閲覧）";
+
+        document.getElementById("iconInput").style.display = "none";
+        document.getElementById("saveBtn").style.display = "none";
+
+        document.getElementById("nameInput").disabled = true;
+        document.getElementById("groupInput").disabled = true;
+        document.getElementById("prefInput").disabled = true;
+        document.getElementById("bioInput").disabled = true;
     }
 });
 
