@@ -97,6 +97,46 @@
             margin-top:20px;
             box-shadow:0 3px 0 #1B5E20;
         }
+
+        /* ▼ 投稿一覧グリッド ▼ */
+        .post-grid {
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:6px;
+            margin-top:15px;
+        }
+
+        .post-item {
+            width:100%;
+            padding-top:100%;
+            position:relative;
+            background:#eee;
+            border-radius:8px;
+            overflow:hidden;
+            cursor:pointer;
+        }
+
+        .post-thumb {
+            position:absolute;
+            top:0; left:0;
+            width:100%; height:100%;
+            object-fit:cover;
+        }
+
+        .post-title-box {
+            position:absolute;
+            top:0; left:0;
+            width:100%; height:100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding:5px;
+            font-size:14px;
+            font-weight:700;
+            color:#4E342E;
+            background:white;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +222,12 @@
 
         <button id="saveBtn" class="save-btn">保存する</button>
     </div>
+
+    <!-- ▼ 投稿一覧カード ▼ -->
+    <div class="card" style="margin-top:20px;">
+        <h2>このユーザーの投稿一覧</h2>
+        <div id="userPosts" class="post-grid"></div>
+    </div>
 </div>
 
 <script>
@@ -200,13 +246,54 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* URL の uid を取得（他人のプロフィール対応） */
+/* URL の uid を取得 */
 const params = new URLSearchParams(location.search);
-const viewUid = params.get("uid"); // null なら自分のプロフィール
+const viewUid = params.get("uid");
 
 let currentUser = null;
 
-/* ログイン確認 */
+/* ▼ 投稿一覧を読み込む ▼ */
+async function loadUserPosts(uid) {
+    const postsRef = db.collection("posts")
+        .where("createdBy", "==", uid)
+        .orderBy("createdAt", "desc");
+
+    const snap = await postsRef.get();
+    const list = document.getElementById("userPosts");
+    list.innerHTML = "";
+
+    if (snap.empty) {
+        list.innerHTML = "<p>投稿はありません。</p>";
+        return;
+    }
+
+    snap.forEach(doc => {
+        const p = doc.data();
+
+        const item = document.createElement("div");
+        item.className = "post-item";
+
+        if (p.images && p.images.length > 0) {
+            const img = document.createElement("img");
+            img.src = p.images[0];
+            img.className = "post-thumb";
+            item.appendChild(img);
+        } else {
+            const box = document.createElement("div");
+            box.className = "post-title-box";
+            box.textContent = p.title || "(タイトルなし)";
+            item.appendChild(box);
+        }
+
+        item.onclick = () => {
+            location.href = `post.html?id=${doc.id}`;
+        };
+
+        list.appendChild(item);
+    });
+}
+
+/* ▼ プロフィール読み込み ▼ */
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         location.href = "login.html";
@@ -214,8 +301,7 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     currentUser = user.uid;
-
-    const targetUid = viewUid || currentUser; // 他人 or 自分
+    const targetUid = viewUid || currentUser;
 
     const ref = db.collection("users").doc(targetUid);
     const snap = await ref.get();
@@ -233,7 +319,7 @@ auth.onAuthStateChanged(async (user) => {
         }
     }
 
-    /* 他人のプロフィールなら編集不可にする */
+    /* 他人のプロフィールなら編集不可 */
     if (viewUid && viewUid !== currentUser) {
         document.getElementById("profileTitle").textContent = "プロフィール（閲覧）";
 
@@ -245,6 +331,9 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById("prefInput").disabled = true;
         document.getElementById("bioInput").disabled = true;
     }
+
+    /* 投稿一覧を読み込む */
+    loadUserPosts(targetUid);
 });
 
 /* アイコンプレビュー */
