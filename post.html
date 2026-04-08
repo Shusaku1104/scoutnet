@@ -56,6 +56,30 @@
             position:relative;
         }
 
+        /* 投稿者情報 */
+        .author-box {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            margin-bottom:15px;
+            cursor:pointer;
+        }
+
+        .author-icon {
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            object-fit:cover;
+            background:#ddd;
+            border:2px solid #D7C4A3;
+        }
+
+        .author-name {
+            font-size:18px;
+            font-weight:700;
+            color:#2E7D32;
+        }
+
         /* 右上の編集・削除ボタン */
         .post-actions {
             position:absolute;
@@ -161,8 +185,10 @@
         }
 
         .comment-user {
-            font-weight:600;
+            font-weight:700;
             margin-bottom:4px;
+            color:#2E7D32;
+            cursor:pointer;
         }
 
         .comment-input {
@@ -209,6 +235,12 @@
 <div class="container">
     <div class="post-card">
 
+        <!-- 投稿者情報 -->
+        <div class="author-box" id="authorBox">
+            <img id="authorIcon" class="author-icon">
+            <div id="authorName" class="author-name"></div>
+        </div>
+
         <!-- 右上の編集・削除ボタン -->
         <div class="post-actions" id="postActions" style="display:none;">
             <span class="edit-icon" id="editBtn">✏️</span>
@@ -222,7 +254,6 @@
             <button class="slide-btn" id="nextBtn">→</button>
         </div>
 
-        <!-- 本文 -->
         <div class="title" id="title"></div>
         <div class="desc" id="desc"></div>
 
@@ -230,7 +261,6 @@
         <div id="files"></div>
 
         <p style="margin-top:15px; font-size:14px; color:#555;">
-            投稿者：<span id="author"></span><br>
             投稿日時：<span id="date"></span>
         </p>
 
@@ -247,7 +277,6 @@
 
     </div>
 </div>
-
 <script>
 /* ポップアップ（共通） */
 function showPopup(message) {
@@ -334,10 +363,24 @@ postRef.get().then(async (snap) => {
     }
     document.getElementById("date").textContent = createdAt;
 
-    /* 投稿者名 */
+    /* 投稿者情報（名前＋アイコン） */
     const userSnap = await db.collection("users").doc(post.createdBy).get();
-    document.getElementById("author").textContent =
-        userSnap.exists ? userSnap.data().name : "不明なユーザー";
+    const authorNameEl = document.getElementById("authorName");
+    const authorIconEl = document.getElementById("authorIcon");
+    const authorBox = document.getElementById("authorBox");
+
+    if (userSnap.exists) {
+        const u = userSnap.data();
+        authorNameEl.textContent = u.name || "不明なユーザー";
+        authorIconEl.src = u.iconUrl || "https://via.placeholder.com/100?text=No+Image";
+
+        /* プロフィールへ飛ぶ */
+        authorBox.onclick = () => {
+            location.href = `profile.html?uid=${post.createdBy}`;
+        };
+    } else {
+        authorNameEl.textContent = "不明なユーザー";
+    }
 
     /* 添付ファイル */
     const filesDiv = document.getElementById("files");
@@ -445,19 +488,27 @@ postRef.collection("comments")
 
         const userMap = {};
         userSnaps.forEach((snap, i) => {
-            userMap[userIds[i]] = snap.exists ? snap.data().name : "不明なユーザー";
+            userMap[userIds[i]] = snap.exists ? snap.data() : null;
         });
 
         snapshot.docs.forEach(docSnap => {
             const c = docSnap.data();
-            const userName = userMap[c.user] || "不明なユーザー";
+            const userData = userMap[c.user];
 
             const commentBox = document.createElement("div");
             commentBox.className = "comment";
 
             const userDiv = document.createElement("div");
             userDiv.className = "comment-user";
-            userDiv.textContent = userName;
+
+            if (userData) {
+                userDiv.textContent = userData.name;
+                userDiv.onclick = () => {
+                    location.href = `profile.html?uid=${c.user}`;
+                };
+            } else {
+                userDiv.textContent = "不明なユーザー";
+            }
 
             const textDiv = document.createElement("div");
             textDiv.textContent = c.text;
