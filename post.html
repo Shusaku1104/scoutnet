@@ -423,12 +423,12 @@ postRef.get().then(async (snap) => {
     if (images.length > 0) {
         slideImage.src = images[currentIndex];
         slideImage.style.display = "block";
-        slider.style.display = "block";   // ← スライダーを表示
+        slider.style.display = "block";
     } else {
-        slider.style.display = "none";    // ← スライダーごと消す
+        slideImage.style.display = "none"; // ← 追加
+        slider.style.display = "none";
     }
 }
-
     document.getElementById("prevBtn").onclick = () => {
         if (images.length === 0) return;
         currentIndex = (currentIndex - 1 + images.length) % images.length;
