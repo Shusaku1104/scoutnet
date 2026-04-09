@@ -20,7 +20,6 @@
             color:#4E342E;
         }
 
-        /* スライド式タブ */
         nav {
             background:white;
             border-bottom:2px solid #D7C4A3;
@@ -37,19 +36,13 @@
             gap:15px;
         }
 
-        nav .tab-scroll::-webkit-scrollbar {
-            display:none;
-        }
-
         nav a {
             color:#4E342E;
             text-decoration:none;
             font-weight:600;
             padding:8px 4px;
-            display:inline-block;
         }
 
-        /* 選択中タブ（緑） */
         nav a.active {
             color:#2E7D32;
             border-bottom:3px solid #2E7D32;
@@ -100,12 +93,6 @@
             margin-top:20px;
             cursor:pointer;
             box-shadow:0 3px 0 #1B5E20;
-            transition:0.1s;
-        }
-
-        #postBtn:active {
-            transform: scale(0.97);
-            opacity: 0.8;
         }
 
         #loading {
@@ -114,6 +101,64 @@
             margin-top:20px;
             font-size:16px;
             color:#777;
+        }
+
+        /* ▼ 画像プレビュー ▼ */
+        #previewArea {
+            margin-top:10px;
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+        }
+
+        .preview-box {
+            position:relative;
+            width:100px;
+            height:100px;
+            border-radius:10px;
+            overflow:hidden;
+            border:2px solid #D7C4A3;
+        }
+
+        .preview-box img {
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .delete-btn {
+            position:absolute;
+            top:3px;
+            right:3px;
+            background:rgba(0,0,0,0.6);
+            color:white;
+            border:none;
+            border-radius:50%;
+            width:22px;
+            height:22px;
+            font-size:14px;
+            cursor:pointer;
+        }
+
+        /* プログレスバー */
+        #progressContainer {
+            display:none;
+            margin-top:15px;
+        }
+
+        #progressBar {
+            width:100%;
+            height:10px;
+            background:#ddd;
+            border-radius:5px;
+            overflow:hidden;
+        }
+
+        #progressFill {
+            width:0%;
+            height:100%;
+            background:#2E7D32;
+            transition:0.2s;
         }
     </style>
 </head>
@@ -149,12 +194,21 @@
         <label>画像（複数可）</label>
         <input type="file" id="images" accept="image/*" multiple>
 
+        <div id="previewArea"></div>
+
         <label>その他ファイル（複数可）</label>
-        <input type="file" id="files" multiple accept=".doc,.docx,.pdf,.txt,.zip,.ppt,.pptx,.xls,.xlsx">
+        <input type="file" id="files" multiple>
 
         <button id="postBtn">投稿する</button>
 
         <div id="loading">投稿中… 少しお待ちください</div>
+
+        <div id="progressContainer">
+            <div id="progressBar">
+                <div id="progressFill"></div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -209,7 +263,71 @@ auth.onAuthStateChanged(user => {
 /* ランダムファイル名 */
 const safeName = () => Math.random().toString(36).substring(2) + "_" + Date.now();
 
-/* 投稿処理 */
+/* ▼ 画像圧縮関数 ▼ */
+function compressImage(file, maxSize = 800) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const scale = maxSize / Math.max(img.width, img.height);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, "image/jpeg", 0.8);
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+/* ▼ 画像プレビュー（削除ボタンつき） ▼ */
+let selectedImages = [];
+
+document.getElementById("images").addEventListener("change", (e) => {
+    const files = [...e.target.files];
+    selectedImages.push(...files);
+
+    renderPreview();
+});
+
+function renderPreview() {
+    const area = document.getElementById("previewArea");
+    area.innerHTML = "";
+
+    selectedImages.forEach((file, index) => {
+        const box = document.createElement("div");
+        box.className = "preview-box";
+
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+
+        const del = document.createElement("button");
+        del.className = "delete-btn";
+        del.textContent = "×";
+        del.onclick = () => {
+            selectedImages.splice(index, 1);
+            renderPreview();
+        };
+
+        box.appendChild(img);
+        box.appendChild(del);
+        area.appendChild(box);
+    });
+}
+
+/* ▼ 投稿処理 ▼ */
 document.getElementById("postBtn").addEventListener("click", async () => {
 
     if (!currentUser) {
@@ -219,6 +337,8 @@ document.getElementById("postBtn").addEventListener("click", async () => {
 
     const btn = document.getElementById("postBtn");
     const loading = document.getElementById("loading");
+    const progressContainer = document.getElementById("progressContainer");
+    const progressFill = document.getElementById("progressFill");
 
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
@@ -232,19 +352,27 @@ document.getElementById("postBtn").addEventListener("click", async () => {
     btn.disabled = true;
     btn.textContent = "投稿中…";
     loading.style.display = "block";
+    progressContainer.style.display = "block";
 
-    const imageFiles = document.getElementById("images").files;
-    const otherFiles = document.getElementById("files").files;
+    /* ▼ 画像アップロード（圧縮＋進行バー） ▼ */
+    let uploadedCount = 0;
 
-    /* 画像アップロード */
-    const uploadImageTasks = [...imageFiles].map(async (file) => {
+    const uploadImageTasks = selectedImages.map(async (file) => {
+        const compressed = await compressImage(file);
+
         const fileRef = storage.ref(`posts/${safeName()}`);
-        await fileRef.put(file);
+        await fileRef.put(compressed);
+
+        uploadedCount++;
+        progressFill.style.width = `${(uploadedCount / selectedImages.length) * 100}%`;
+
         return await fileRef.getDownloadURL();
     });
+
     const imageURLs = await Promise.all(uploadImageTasks);
 
     /* その他ファイルアップロード */
+    const otherFiles = document.getElementById("files").files;
     const uploadFileTasks = [...otherFiles].map(async (file) => {
         const fileRef = storage.ref(`posts/${safeName()}`);
         await fileRef.put(file);
