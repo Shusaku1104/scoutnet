@@ -246,13 +246,42 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+/* ▼ 画像圧縮関数（アイコン用：400px） ▼ */
+function compressImage(file, maxSize = 400) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const scale = maxSize / Math.max(img.width, img.height);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, "image/jpeg", 0.8);
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
 /* URL の uid を取得 */
 const params = new URLSearchParams(location.search);
 const viewUid = params.get("uid");
 
 let currentUser = null;
 
-/* ▼ 投稿一覧を読み込む ▼ */
+/* ▼ 投稿一覧を読み込む（サムネイル対応） ▼ */
 async function loadUserPosts(uid) {
     const postsRef = db.collection("posts")
         .where("createdBy", "==", uid)
@@ -273,9 +302,19 @@ async function loadUserPosts(uid) {
         const item = document.createElement("div");
         item.className = "post-item";
 
-        if (p.images && p.images.length > 0) {
+        /* ▼ サムネイル優先で読み込む ▼ */
+        let thumbUrl = null;
+
+        if (p.thumbs && p.thumbs.length > 0) {
+            thumbUrl = p.thumbs[0]; // 200px サムネイル
+        } else if (p.images && p.images.length > 0) {
+            thumbUrl = p.images[0]; // fallback
+        }
+
+        if (thumbUrl) {
             const img = document.createElement("img");
-            img.src = p.images[0];
+            img.src = thumbUrl;
+            img.loading = "lazy"; // 遅延読み込み
             img.className = "post-thumb";
             item.appendChild(img);
         } else {
@@ -344,7 +383,7 @@ document.getElementById("iconInput").onchange = (e) => {
     }
 };
 
-/* 保存 */
+/* ▼ 保存（アイコン圧縮つき） ▼ */
 document.getElementById("saveBtn").onclick = async () => {
     const name = document.getElementById("nameInput").value.trim();
     const group = document.getElementById("groupInput").value.trim();
@@ -355,8 +394,9 @@ document.getElementById("saveBtn").onclick = async () => {
 
     const file = document.getElementById("iconInput").files[0];
     if (file) {
+        const compressed = await compressImage(file, 400); // 400px に圧縮
         const path = `icons/${currentUser}.jpg`;
-        await storage.ref(path).put(file);
+        await storage.ref(path).put(compressed);
         iconUrl = await storage.ref(path).getDownloadURL();
     }
 
@@ -371,6 +411,3 @@ document.getElementById("saveBtn").onclick = async () => {
     alert("変更が完了しました！");
 };
 </script>
-
-</body>
-</html>
