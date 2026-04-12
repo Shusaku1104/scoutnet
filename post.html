@@ -314,15 +314,13 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* 管理者UID（周作） */
-const ADMIN_UID = "51LQrBx2m5Pru43eIQOdVUtlkXC3";
-
 /* 投稿ID取得 */
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 const postRef = db.collection("posts").doc(postId);
 
 let currentUser = null;
+let currentUserRole = "user"; // ← 追加
 let postData = null;
 let likeRef = null;
 
@@ -335,6 +333,12 @@ auth.onAuthStateChanged(async (user) => {
 
     currentUser = user.uid;
     likeRef = postRef.collection("likes").doc(currentUser);
+
+    /* ▼ ログインユーザーの role を取得 */
+    const userSnap = await db.collection("users").doc(currentUser).get();
+    if (userSnap.exists) {
+        currentUserRole = userSnap.data().role || "user";
+    }
 
     /* いいね状態の監視 */
     likeRef.onSnapshot((snap) => {
@@ -363,7 +367,7 @@ postRef.get().then(async (snap) => {
     }
     document.getElementById("date").textContent = createdAt;
 
-    /* 投稿者情報（名前＋アイコン） */
+    /* 投稿者情報 */
     const userSnap = await db.collection("users").doc(post.createdBy).get();
     const authorNameEl = document.getElementById("authorName");
     const authorIconEl = document.getElementById("authorIcon");
@@ -374,7 +378,6 @@ postRef.get().then(async (snap) => {
         authorNameEl.textContent = u.name || "不明なユーザー";
         authorIconEl.src = u.iconUrl || "https://via.placeholder.com/100?text=No+Image";
 
-        /* プロフィールへ飛ぶ */
         authorBox.onclick = () => {
             location.href = `profile.html?uid=${post.createdBy}`;
         };
@@ -400,15 +403,13 @@ postRef.get().then(async (snap) => {
     });
 
     /* ✏️🗑️ 編集・削除ボタン表示 */
-    if (post.createdBy === currentUser || currentUser === ADMIN_UID) {
+    if (post.createdBy === currentUser || currentUserRole === "admin") {
         document.getElementById("postActions").style.display = "flex";
 
-        /* 編集ボタン */
         document.getElementById("editBtn").onclick = () => {
             location.href = `editpost.html?id=${postId}`;
         };
 
-        /* 削除ボタン */
         document.getElementById("deleteBtn").onclick = deletePost;
     }
 
@@ -418,17 +419,18 @@ postRef.get().then(async (snap) => {
     let currentIndex = 0;
 
     function updateSlide() {
-    const slider = document.querySelector(".slider");
+        const slider = document.querySelector(".slider");
 
-    if (images.length > 0) {
-        slideImage.src = images[currentIndex];
-        slideImage.style.display = "block";
-        slider.style.display = "block";
-    } else {
-        slideImage.style.display = "none"; // ← 追加
-        slider.style.display = "none";
+        if (images.length > 0) {
+            slideImage.src = images[currentIndex];
+            slideImage.style.display = "block";
+            slider.style.display = "block";
+        } else {
+            slideImage.style.display = "none";
+            slider.style.display = "none";
+        }
     }
-}
+
     document.getElementById("prevBtn").onclick = () => {
         if (images.length === 0) return;
         currentIndex = (currentIndex - 1 + images.length) % images.length;
