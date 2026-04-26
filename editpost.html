@@ -5,7 +5,7 @@
     <title>ScoutNet - 投稿編集</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8 -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -16,38 +16,33 @@
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
-            padding:20px;
+            padding:0 0 80px;
             color:#4E342E;
         }
 
-        nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
-            background:white;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:0;
-            z-index:100;
+        /* 上ナビバー */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 14px 18px;
+            border-bottom: 2px solid #D7C4A3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            transition:0.1s;
-        }
-        nav a:active {
-            transform:scale(0.95);
-            opacity:0.8;
+        .top-nav img { height: 28px; }
+        .top-nav-title {
+            font-size: 20px;
+            font-weight: 700;
         }
 
         .card {
             background:white;
-            padding:20px;
-            border-radius:16px;
             border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:20px;
             margin:20px auto;
             max-width:600px;
             box-shadow:0 4px 0 #D7C4A3;
@@ -79,14 +74,33 @@
             transform:scale(0.97);
         }
 
-        .preview-box {
-            margin-top:10px;
+        /* 画像プレビュー */
+        .image-list {
+            display:flex;
+            flex-direction:column;
+            gap:15px;
+        }
+
+        .image-item {
+            background:white;
+            border:1px solid #D7C4A3;
+            border-radius:12px;
+            padding:10px;
+            display:flex;
+            gap:10px;
+            align-items:center;
+            cursor:grab;
+        }
+
+        .image-item.dragging {
+            opacity:0.4;
         }
 
         .preview-img {
-            width:100%;
-            border-radius:12px;
-            margin-bottom:10px;
+            width:90px;
+            height:90px;
+            object-fit:cover;
+            border-radius:10px;
         }
 
         .remove-btn {
@@ -96,32 +110,51 @@
             border:none;
             border-radius:8px;
             cursor:pointer;
-            width:100%;
-            margin-bottom:15px;
             transition:0.1s;
         }
         .remove-btn:active {
             transform:scale(0.97);
         }
+
+        /* 下タブ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            border-top: 2px solid #D7C4A3;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -3px 0 #D7C4A3;
+            z-index: 999;
+        }
+        .bottom-nav a {
+            text-decoration: none;
+            color: #4E342E;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .bottom-nav img {
+            width: 26px;
+            height: 26px;
+        }
     </style>
 </head>
+
 <body>
 
-<nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div style="display:flex; gap:18px;">
-        <a href="home.html">ホーム</a>
-        <a href="newpost.html">投稿する</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
-    </div>
-</nav>
+<!-- 上ナビバー -->
+<div class="top-nav">
+    <img src="icons/logo.png">
+    <div class="top-nav-title">投稿編集</div>
+</div>
 
 <div class="card">
-    <h2 style="font-size:1.4rem;">投稿を編集</h2>
+    <h2>投稿を編集</h2>
 
     <label>タイトル</label>
     <input type="text" id="title" class="input">
@@ -134,15 +167,29 @@
         <option value="アウトドア">⛺ アウトドア</option>
         <option value="インドア">🏠 インドア</option>
         <option value="奉仕">🤝 奉仕</option>
+        <option value="その他">📦 その他</option>
     </select>
 
-    <h3>📷 現在の画像</h3>
-    <div id="currentImages"></div>
+    <h3>📷 現在の画像（ドラッグで並び替え）</h3>
+    <div id="imageList" class="image-list"></div>
 
-    <h3>📤 新しい画像を追加（複数可）</h3>
+    <h3>📤 新しい画像を追加</h3>
     <input type="file" id="newImages" accept="image/*" multiple class="input">
 
     <button id="submit" class="submit-btn">更新する</button>
+</div>
+
+<!-- 下タブ -->
+<div class="bottom-nav">
+    <a href="home.html">
+        <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="newpost.html">
+        <img src="icons/add.png"><br>投稿
+    </a>
+    <a href="profile.html">
+        <img src="icons/user.png"><br>プロフィール
+    </a>
 </div>
 
 <script>
@@ -167,7 +214,7 @@ function showPopup(message) {
     setTimeout(() => msg.remove(), 1500);
 }
 
-/* Firebase 設定（統一版） */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -188,7 +235,8 @@ const postId = params.get("id");
 const postRef = db.collection("posts").doc(postId);
 
 let currentUser = null;
-let originalImages = [];
+let images = []; // 並び替え後の画像
+let thumbs = []; // サムネイル
 
 /* ログイン確認 */
 auth.onAuthStateChanged(async (user) => {
@@ -197,44 +245,14 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
     currentUser = user.uid;
-
     loadPost();
 });
-
-/* 画像一覧の描画だけを行う関数 */
-function renderImages() {
-    const container = document.getElementById("currentImages");
-    container.innerHTML = "";
-
-    originalImages.forEach((url, index) => {
-        const box = document.createElement("div");
-        box.className = "preview-box";
-
-        const img = document.createElement("img");
-        img.src = url;
-        img.className = "preview-img";
-
-        const btn = document.createElement("button");
-        btn.className = "remove-btn";
-        btn.textContent = "この画像を削除";
-        btn.onclick = () => {
-            // indexズレを防ぐため filter で再生成
-            originalImages = originalImages.filter((_, i) => i !== index);
-            renderImages();
-        };
-
-        box.appendChild(img);
-        box.appendChild(btn);
-        container.appendChild(box);
-    });
-}
 
 /* 投稿読み込み */
 async function loadPost() {
     const snap = await postRef.get();
     if (!snap.exists) {
         showPopup("投稿が見つかりません");
-        setTimeout(() => location.href = "home.html", 1500);
         return;
     }
 
@@ -242,7 +260,6 @@ async function loadPost() {
 
     if (post.createdBy !== currentUser) {
         showPopup("編集権限がありません");
-        setTimeout(() => location.href = "home.html", 1500);
         return;
     }
 
@@ -250,8 +267,133 @@ async function loadPost() {
     document.getElementById("description").value = post.description;
     document.getElementById("category").value = post.category;
 
-    originalImages = post.images || [];
+    images = post.images || [];
+    thumbs = post.thumbs || [];
+
     renderImages();
+}
+
+/* 画像リスト描画 */
+function renderImages() {
+    const list = document.getElementById("imageList");
+    list.innerHTML = "";
+
+    images.forEach((url, index) => {
+        const item = document.createElement("div");
+        item.className = "image-item";
+        item.draggable = true;
+        item.dataset.index = index;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.className = "preview-img";
+
+        const btn = document.createElement("button");
+        btn.className = "remove-btn";
+        btn.textContent = "削除";
+        btn.onclick = () => {
+            images.splice(index, 1);
+            thumbs.splice(index, 1);
+            renderImages();
+        };
+
+        item.appendChild(img);
+        item.appendChild(btn);
+        list.appendChild(item);
+
+        /* ドラッグ処理 */
+        item.addEventListener("dragstart", () => {
+            item.classList.add("dragging");
+        });
+        item.addEventListener("dragend", () => {
+            item.classList.remove("dragging");
+            updateOrder();
+        });
+    });
+
+    /* ドラッグ位置判定 */
+    list.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector(".dragging");
+        const after = getDragAfterElement(list, e.clientY);
+        if (after == null) {
+            list.appendChild(dragging);
+        } else {
+            list.insertBefore(dragging, after);
+        }
+    });
+}
+
+/* ドラッグ後の順番更新 */
+function updateOrder() {
+    const items = [...document.querySelectorAll(".image-item")];
+    const newImages = [];
+    const newThumbs = [];
+
+    items.forEach(item => {
+        const index = item.dataset.index;
+        newImages.push(images[index]);
+        newThumbs.push(thumbs[index]);
+    });
+
+    images = newImages;
+    thumbs = newThumbs;
+}
+
+/* ドラッグ位置取得 */
+function getDragAfterElement(container, y) {
+    const items = [...container.querySelectorAll(".image-item:not(.dragging)")];
+
+    return items.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+/* サムネイル生成（軽量版） */
+function createThumbnail(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const maxSize = 300;
+            let w = img.width;
+            let h = img.height;
+
+            if (w > h) {
+                if (w > maxSize) {
+                    h *= maxSize / w;
+                    w = maxSize;
+                }
+            } else {
+                if (h > maxSize) {
+                    w *= maxSize / h;
+                    h = maxSize;
+                }
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+
+            resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+    });
 }
 
 /* 更新処理 */
@@ -269,27 +411,22 @@ document.getElementById("submit").onclick = async () => {
     btn.disabled = true;
     btn.textContent = "更新中…";
 
-    /* 新しい画像アップロード */
+    /* 新規画像アップロード */
     const newFiles = document.getElementById("newImages").files;
-    const uploadTasks = [...newFiles].map(async (file) => {
+    const newImageUrls = [];
+    const newThumbUrls = [];
+
+    for (let file of newFiles) {
         const ref = storage.ref("posts/" + Date.now() + "_" + file.name);
         await ref.put(file);
-        return await ref.getDownloadURL();
-    });
+        const url = await ref.getDownloadURL();
+        newImageUrls.push(url);
 
-    const newImageUrls = await Promise.all(uploadTasks);
-
-    /* 削除された画像を Storage から削除 */
-    const snap = await postRef.get();
-    const oldImages = snap.data().images || [];
-
-    for (let old of oldImages) {
-        if (!originalImages.includes(old)) {
-            try {
-                const path = decodeURIComponent(old.split("/o/")[1].split("?")[0]);
-                await storage.ref(path).delete();
-            } catch (e) {}
-        }
+        const thumbData = await createThumbnail(file);
+        const thumbRef = storage.ref("thumbs/" + Date.now() + "_thumb_" + file.name);
+        await thumbRef.putString(thumbData, "data_url");
+        const thumbUrl = await thumbRef.getDownloadURL();
+        newThumbUrls.push(thumbUrl);
     }
 
     /* Firestore 更新 */
@@ -297,7 +434,8 @@ document.getElementById("submit").onclick = async () => {
         title,
         description,
         category,
-        images: [...originalImages, ...newImageUrls]
+        images: [...images, ...newImageUrls],
+        thumbs: [...thumbs, ...newThumbUrls]
     });
 
     showPopup("更新が完了しました！");
