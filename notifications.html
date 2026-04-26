@@ -15,8 +15,28 @@
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
-            padding:0;
+            padding:0 0 80px;
             color:#4E342E;
+        }
+
+        /* 上ナビバー */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 14px 18px;
+            border-bottom: 2px solid #D7C4A3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-nav img {
+            height: 28px;
+        }
+        .top-nav-title {
+            font-size: 20px;
+            font-weight: 700;
         }
 
         /* スライド式タブ */
@@ -24,22 +44,19 @@
             background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
-            top:0;
-            z-index:100;
+            top:56px;
+            z-index:150;
             padding:10px;
         }
-
         nav .tab-scroll {
             display:flex;
             overflow-x:auto;
             white-space:nowrap;
             gap:15px;
         }
-
         nav .tab-scroll::-webkit-scrollbar {
             display:none;
         }
-
         nav a {
             color:#4E342E;
             text-decoration:none;
@@ -47,31 +64,33 @@
             padding:8px 4px;
             display:inline-block;
         }
-
-        /* 選択中タブ（緑） */
         nav a.active {
             color:#2E7D32;
             border-bottom:3px solid #2E7D32;
         }
 
+        /* 通知カード */
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
-
+        h2 {
+            text-align:center;
+            margin-bottom:20px;
+            color:#2E7D32;
+        }
         #loading {
             text-align:center;
             margin-top:40px;
             font-size:18px;
             color:#777;
         }
-
         .notice-card {
             background:white;
             padding:15px;
             margin-bottom:12px;
-            border-radius:12px;
+            border-radius:16px;
             border:2px solid #D7C4A3;
             box-shadow:0 4px 0 #D7C4A3;
             cursor:pointer;
@@ -81,33 +100,63 @@
             transform:scale(0.98);
             box-shadow:0 2px 0 #BCA68A;
         }
-
         .notice-row {
             display:flex;
             align-items:center;
         }
-
         .notice-icon {
             font-size:24px;
             margin-right:10px;
         }
-
         .notice-time {
             font-size:12px;
             color:#6d6d6d;
             margin-top:5px;
         }
-
         .empty {
             text-align:center;
             margin-top:40px;
             font-size:16px;
             color:#777;
         }
+
+        /* 下タブ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            border-top: 2px solid #D7C4A3;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -3px 0 #D7C4A3;
+            z-index: 999;
+        }
+        .bottom-nav a {
+            text-decoration: none;
+            color: #4E342E;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .bottom-nav img {
+            width: 26px;
+            height: 26px;
+        }
     </style>
 </head>
 <body>
 
+<!-- 上ナビバー -->
+<div class="top-nav">
+    <img src="icons/logo.png">
+    <div class="top-nav-title">ScoutNet</div>
+</div>
+
+<!-- スライド式タブ -->
 <nav>
     <div class="tab-scroll">
         <a href="home.html">ホーム</a>
@@ -123,6 +172,19 @@
 
     <div id="loading">読み込み中…</div>
     <div id="notifications"></div>
+</div>
+
+<!-- 下タブ -->
+<div class="bottom-nav">
+    <a href="home.html">
+        <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="newpost.html">
+        <img src="icons/add.png"><br>投稿
+    </a>
+    <a href="profile.html">
+        <img src="icons/user.png"><br>プロフィール
+    </a>
 </div>
 
 <script>
@@ -233,7 +295,7 @@ auth.onAuthStateChanged(async (user) => {
                 card.onclick = async () => {
                     if (data.postId) {
                         await doc.ref.update({ read: true });
-                        location.href = \`post.html?id=\${data.postId}\`;
+                        location.href = `post.html?id=${data.postId}`;
                     }
                 };
 
