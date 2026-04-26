@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ScoutNet - その他の投稿</title>
+    <title>ScoutNet - その他</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase -->
+    <!-- Firebase 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -31,69 +31,53 @@
             align-items: center;
             gap: 10px;
         }
-        .top-nav img {
-            height: 28px;
-        }
+        .top-nav img { height: 28px; }
         .top-nav-title {
             font-size: 20px;
             font-weight: 700;
         }
 
-        /* スライド式タブ */
-        nav {
-            background:white;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:56px;
-            z-index:150;
-            padding:10px;
-        }
-        nav .tab-scroll {
-            display:flex;
-            overflow-x:auto;
-            white-space:nowrap;
-            gap:15px;
-        }
-        nav .tab-scroll::-webkit-scrollbar { display:none; }
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            padding:8px 4px;
-        }
-        nav a.active {
-            color:#2E7D32;
-            border-bottom:3px solid #2E7D32;
-        }
-
-        /* 投稿カード */
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
+
+        /* 投稿カード */
         .post-card {
             background:white;
             border:2px solid #D7C4A3;
             border-radius:16px;
-            padding:15px;
-            margin-bottom:15px;
+            padding:12px;
             box-shadow:0 4px 0 #D7C4A3;
+            margin-bottom:18px;
             cursor:pointer;
         }
-        .post-title {
+
+        .thumb {
+            width:100%;
+            height:200px;
+            object-fit:cover;
+            border-radius:12px;
+            background:#ddd;
+        }
+
+        .title {
             font-size:18px;
             font-weight:700;
-            margin-bottom:8px;
-        }
-        .post-thumb {
-            width:100%;
-            border-radius:12px;
             margin-top:10px;
         }
-        .empty {
+
+        .meta {
+            font-size:13px;
+            color:#777;
+            margin-top:4px;
+        }
+
+        /* ローディング */
+        #loading {
             text-align:center;
-            margin-top:40px;
+            padding:20px;
             color:#777;
         }
 
@@ -125,28 +109,17 @@
         }
     </style>
 </head>
+
 <body>
 
 <!-- 上ナビバー -->
 <div class="top-nav">
     <img src="icons/logo.png">
-    <div class="top-nav-title">ScoutNet</div>
+    <div class="top-nav-title">その他</div>
 </div>
 
-<!-- スライド式タブ -->
-<nav>
-    <div class="tab-scroll">
-        <a href="home.html">ホーム</a>
-        <a href="outdoor.html">アウトドア</a>
-        <a href="indoor.html">インドア</a>
-        <a href="volunteer.html">奉仕</a>
-        <a href="sonota.html" class="active">その他</a>
-    </div>
-</nav>
-
-<div class="container">
-    <h2 style="color:#2E7D32; text-align:center;">その他の投稿</h2>
-    <div id="posts"></div>
+<div class="container" id="postList">
+    <p id="loading">読み込み中…</p>
 </div>
 
 <!-- 下タブ -->
@@ -176,42 +149,85 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ▼ その他カテゴリの投稿を読み込む ▼ */
+/* UI */
+const postList = document.getElementById("postList");
+const loading = document.getElementById("loading");
+
+/* 無限スクロール用 */
+let lastDoc = null;
+let isLoading = false;
+const limit = 8;
+
+/* 投稿を読み込む */
 async function loadPosts() {
-    const snap = await db.collection("posts")
+    if (isLoading) return;
+    isLoading = true;
+
+    loading.style.display = "block";
+
+    let ref = db.collection("posts")
         .where("category", "==", "その他")
         .orderBy("createdAt", "desc")
-        .get();
+        .limit(limit);
 
-    const box = document.getElementById("posts");
+    if (lastDoc) ref = ref.startAfter(lastDoc);
+
+    const snap = await ref.get();
+
+    loading.style.display = "none";
 
     if (snap.empty) {
-        box.innerHTML = `<p class="empty">まだ投稿がありません。</p>`;
+        if (!lastDoc) {
+            postList.innerHTML = "<p style='text-align:center; color:#777;'>まだ投稿がありません。</p>";
+        }
         return;
     }
 
-    snap.forEach(doc => {
+    lastDoc = snap.docs[snap.docs.length - 1];
+
+    snap.docs.forEach(doc => {
         const p = doc.data();
+        const id = doc.id;
 
         const card = document.createElement("div");
         card.className = "post-card";
+        card.onclick = () => location.href = `post.html?id=${id}`;
 
-        card.innerHTML = `
-            <div class="post-title">${p.title}</div>
-            ${p.images && p.images.length > 0
-                ? `<img src="${p.images[0]}" class="post-thumb">`
-                : ""
-            }
-        `;
+        /* サムネイル優先 */
+        const img = document.createElement("img");
+        img.className = "thumb";
+        img.src = (p.thumbs && p.thumbs.length > 0)
+            ? p.thumbs[0]
+            : (p.images && p.images.length > 0 ? p.images[0] : "icons/noimage.png");
 
-        card.onclick = () => {
-            location.href = "post.html?id=" + doc.id;
-        };
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = p.title || "(タイトルなし)";
 
-        box.appendChild(card);
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = p.createdAt?.toDate
+            ? p.createdAt.toDate().toLocaleString()
+            : "日時不明";
+
+        card.appendChild(img);
+        card.appendChild(title);
+        card.appendChild(meta);
+
+        postList.appendChild(card);
     });
+
+    isLoading = false;
 }
 
+/* スクロール監視（無限スクロール） */
+window.addEventListener("scroll", () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        loadPosts();
+    }
+});
+
+/* 初回読み込み */
 loadPosts();
 </script>
 
