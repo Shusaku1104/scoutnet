@@ -15,31 +15,48 @@
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
-            padding:0;
+            padding:0 0 80px; /* ← 下タブの高さ確保 */
             color:#4E342E;
         }
 
-        /* スライド式タブ */
+        /* 上ナビバー（ロゴ固定） */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 14px 18px;
+            border-bottom: 2px solid #D7C4A3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-nav img {
+            height: 28px;
+        }
+        .top-nav-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* カテゴリタブ */
         nav {
             background:white;
             border-bottom:2px solid #D7C4A3;
             position:sticky;
-            top:0;
-            z-index:100;
+            top:56px;
+            z-index:150;
             padding:10px;
         }
-
         nav .tab-scroll {
             display:flex;
             overflow-x:auto;
             white-space:nowrap;
             gap:15px;
         }
-
         nav .tab-scroll::-webkit-scrollbar {
             display:none;
         }
-
         nav a, #categoryBtn {
             color:#4E342E;
             text-decoration:none;
@@ -47,13 +64,10 @@
             padding:8px 4px;
             display:inline-block;
         }
-
-        /* 選択中タブ（緑） */
         nav a.active {
             color:#2E7D32;
             border-bottom:3px solid #2E7D32;
         }
-
         #categoryBtn {
             background:#2E7D32;
             color:white;
@@ -63,47 +77,38 @@
             border:none;
         }
 
+        /* カテゴリメニュー */
         #categoryMenu {
             position:absolute;
             left:20px;
-            top:60px;
+            top:120px;
             background:white;
             border:2px solid #D7C4A3;
             border-radius:12px;
             box-shadow:0 4px 0 #D7C4A3;
             display:none;
             width:150px;
-            z-index:200;
+            z-index:300;
         }
-
         .category-item {
             padding:12px;
             cursor:pointer;
             border-bottom:1px solid #EEE;
         }
-
         .category-item:hover {
             background:#F1F8E9;
         }
-
         .category-active {
             background:#C8E6C9 !important;
             font-weight:700;
         }
 
+        /* 投稿カード */
         .container {
             max-width:600px;
             margin:20px auto;
             padding:0 15px;
         }
-
-        #loading {
-            text-align:center;
-            margin-top:40px;
-            font-size:18px;
-            color:#777;
-        }
-
         .post {
             background:white;
             border:2px solid #D7C4A3;
@@ -113,13 +118,11 @@
             box-shadow:0 4px 0 #D7C4A3;
             cursor:pointer;
         }
-
         .post img {
             width:100%;
             border-radius:12px;
             margin-bottom:10px;
         }
-
         .category-tag {
             display:inline-block;
             background:#E8F5E9;
@@ -130,23 +133,21 @@
             margin-bottom:6px;
             border:1px solid #A5D6A7;
         }
-
         .title {
             font-size:20px;
             font-weight:600;
             margin-bottom:8px;
         }
-
         .desc {
             font-size:15px;
             margin-bottom:10px;
         }
 
+        /* ページャー */
         #pager {
             text-align:center;
             margin:20px 0;
         }
-
         #pager button {
             padding:8px 14px;
             margin:0 10px;
@@ -154,10 +155,44 @@
             border:1px solid #A5D6A7;
             cursor:pointer;
         }
+
+        /* 下タブ（インスタ風） */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            border-top: 2px solid #D7C4A3;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -3px 0 #D7C4A3;
+            z-index: 999;
+        }
+        .bottom-nav a {
+            text-decoration: none;
+            color: #4E342E;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .bottom-nav img {
+            width: 26px;
+            height: 26px;
+        }
     </style>
 </head>
 <body>
 
+<!-- 上ナビバー -->
+<div class="top-nav">
+    <img src="icons/logo.png">
+    <div class="top-nav-title">ScoutNet</div>
+</div>
+
+<!-- カテゴリタブ -->
 <nav>
     <div class="tab-scroll">
         <button id="categoryBtn">カテゴリ ▼</button>
@@ -169,13 +204,16 @@
     </div>
 </nav>
 
+<!-- カテゴリメニュー -->
 <div id="categoryMenu">
     <div class="category-item" data-cat="すべて">すべて</div>
     <div class="category-item" data-cat="アウトドア">アウトドア</div>
     <div class="category-item" data-cat="インドア">インドア</div>
     <div class="category-item" data-cat="奉仕">奉仕</div>
+    <div class="category-item" data-cat="その他">その他</div>
 </div>
 
+<!-- 投稿一覧 -->
 <div class="container">
     <div id="loading">読み込み中…</div>
     <div id="postList"></div>
@@ -184,6 +222,19 @@
         <button id="prevBtn" disabled>前へ</button>
         <button id="nextBtn" disabled>次へ</button>
     </div>
+</div>
+
+<!-- 下タブ -->
+<div class="bottom-nav">
+    <a href="home.html">
+        <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="newpost.html">
+        <img src="icons/add.png"><br>投稿
+    </a>
+    <a href="profile.html">
+        <img src="icons/user.png"><br>プロフィール
+    </a>
 </div>
 
 <script>
