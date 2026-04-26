@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - パスワード再設定</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Firebase 8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background:#f5f5f5;
+            margin:0;
+            padding:0;
+            color:#4E342E;
+        }
+        .container {
+            max-width:400px;
+            margin:60px auto;
+            background:white;
+            padding:25px;
+            border-radius:16px;
+            border:2px solid #D7C4A3;
+            box-shadow:0 4px 0 #D7C4A3;
+        }
+        h2 {
+            text-align:center;
+            margin-bottom:10px;
+        }
+        p {
+            text-align:center;
+            font-size:14px;
+            margin-bottom:20px;
+            color:#6d4c41;
+        }
+        input {
+            width:100%;
+            padding:12px;
+            margin-bottom:12px;
+            border:1px solid #D7C4A3;
+            border-radius:10px;
+            font-size:15px;
+        }
+        .btn {
+            width:100%;
+            padding:14px;
+            background:#2E7D32;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            box-shadow:0 3px 0 #1B5E20;
+            margin-top:10px;
+            transition:0.1s;
+        }
+        .btn:active {
+            transform: scale(0.97);
+            opacity: 0.8;
+        }
+        .link {
+            text-align:center;
+            margin-top:15px;
+        }
+        .link a {
+            color:#2E7D32;
+            text-decoration:none;
+            font-weight:600;
+        }
+        #msg {
+            text-align:center;
+            margin-top:10px;
+            font-size:14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>パスワード再設定</h2>
+    <p>登録したメールアドレスに再設定リンクを送信します。</p>
+
+    <input type="email" id="email" placeholder="メールアドレス">
+
+    <button class="btn" id="resetBtn">再設定メールを送信</button>
+
+    <div id="msg"></div>
+
+    <div class="link">
+        <a href="login.html">ログイン画面に戻る</a>
+    </div>
+</div>
+
+<script>
+/* Firebase 設定 */
+const firebaseConfig = {
+  apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+/* 再設定メール送信 */
+document.getElementById("resetBtn").onclick = async () => {
+    const email = document.getElementById("email").value.trim();
+    const msg = document.getElementById("msg");
+    const btn = document.getElementById("resetBtn");
+
+    if (!email) {
+        msg.textContent = "メールアドレスを入力してください。";
+        msg.style.color = "red";
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "送信中…";
+    msg.textContent = "";
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        msg.textContent = "再設定メールを送信しました！メールを確認してください。";
+        msg.style.color = "#2E7D32";
+    } catch (e) {
+        msg.textContent = "メールアドレスが見つかりません。";
+        msg.style.color = "red";
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "再設定メールを送信";
+    }
+};
+</script>
+
+</body>
+</html>
