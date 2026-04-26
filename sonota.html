@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ScoutNet - その他の投稿</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        body {
+            font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+            background:#f5f5f5;
+            margin:0;
+            padding:0 0 80px;
+            color:#4E342E;
+        }
+
+        /* 上ナビバー */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 14px 18px;
+            border-bottom: 2px solid #D7C4A3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-nav img {
+            height: 28px;
+        }
+        .top-nav-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* スライド式タブ */
+        nav {
+            background:white;
+            border-bottom:2px solid #D7C4A3;
+            position:sticky;
+            top:56px;
+            z-index:150;
+            padding:10px;
+        }
+        nav .tab-scroll {
+            display:flex;
+            overflow-x:auto;
+            white-space:nowrap;
+            gap:15px;
+        }
+        nav .tab-scroll::-webkit-scrollbar { display:none; }
+        nav a {
+            color:#4E342E;
+            text-decoration:none;
+            font-weight:600;
+            padding:8px 4px;
+        }
+        nav a.active {
+            color:#2E7D32;
+            border-bottom:3px solid #2E7D32;
+        }
+
+        /* 投稿カード */
+        .container {
+            max-width:600px;
+            margin:20px auto;
+            padding:0 15px;
+        }
+        .post-card {
+            background:white;
+            border:2px solid #D7C4A3;
+            border-radius:16px;
+            padding:15px;
+            margin-bottom:15px;
+            box-shadow:0 4px 0 #D7C4A3;
+            cursor:pointer;
+        }
+        .post-title {
+            font-size:18px;
+            font-weight:700;
+            margin-bottom:8px;
+        }
+        .post-thumb {
+            width:100%;
+            border-radius:12px;
+            margin-top:10px;
+        }
+        .empty {
+            text-align:center;
+            margin-top:40px;
+            color:#777;
+        }
+
+        /* 下タブ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            border-top: 2px solid #D7C4A3;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -3px 0 #D7C4A3;
+            z-index: 999;
+        }
+        .bottom-nav a {
+            text-decoration: none;
+            color: #4E342E;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .bottom-nav img {
+            width: 26px;
+            height: 26px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 上ナビバー -->
+<div class="top-nav">
+    <img src="icons/logo.png">
+    <div class="top-nav-title">ScoutNet</div>
+</div>
+
+<!-- スライド式タブ -->
+<nav>
+    <div class="tab-scroll">
+        <a href="home.html">ホーム</a>
+        <a href="outdoor.html">アウトドア</a>
+        <a href="indoor.html">インドア</a>
+        <a href="volunteer.html">奉仕</a>
+        <a href="sonota.html" class="active">その他</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2 style="color:#2E7D32; text-align:center;">その他の投稿</h2>
+    <div id="posts"></div>
+</div>
+
+<!-- 下タブ -->
+<div class="bottom-nav">
+    <a href="home.html">
+        <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="newpost.html">
+        <img src="icons/add.png"><br>投稿
+    </a>
+    <a href="profile.html">
+        <img src="icons/user.png"><br>プロフィール
+    </a>
+</div>
+
+<script>
+/* Firebase 設定 */
+const firebaseConfig = {
+  apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
+  authDomain: "scoutnet12.firebaseapp.com",
+  projectId: "scoutnet12",
+  storageBucket: "scoutnet12.firebasestorage.app",
+  messagingSenderId: "572737738511",
+  appId: "1:572737738511:web:36a6a477c7ec6b8db7507a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ▼ その他カテゴリの投稿を読み込む ▼ */
+async function loadPosts() {
+    const snap = await db.collection("posts")
+        .where("category", "==", "その他")
+        .orderBy("createdAt", "desc")
+        .get();
+
+    const box = document.getElementById("posts");
+
+    if (snap.empty) {
+        box.innerHTML = `<p class="empty">まだ投稿がありません。</p>`;
+        return;
+    }
+
+    snap.forEach(doc => {
+        const p = doc.data();
+
+        const card = document.createElement("div");
+        card.className = "post-card";
+
+        card.innerHTML = `
+            <div class="post-title">${p.title}</div>
+            ${p.images && p.images.length > 0
+                ? `<img src="${p.images[0]}" class="post-thumb">`
+                : ""
+            }
+        `;
+
+        card.onclick = () => {
+            location.href = "post.html?id=" + doc.id;
+        };
+
+        box.appendChild(card);
+    });
+}
+
+loadPosts();
+</script>
+
+</body>
+</html>
