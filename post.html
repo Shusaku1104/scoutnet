@@ -16,29 +16,26 @@
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
-            padding:0;
+            padding:0 0 80px;
             color:#4E342E;
         }
 
-        nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 20px;
-            background:white;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:0;
-            z-index:100;
-            overflow-x:auto;
-            white-space:nowrap;
+        /* 上ナビバー */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: white;
+            padding: 14px 18px;
+            border-bottom: 2px solid #D7C4A3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            margin-left:15px;
+        .top-nav img { height: 28px; }
+        .top-nav-title {
+            font-size: 20px;
+            font-weight: 700;
         }
 
         .container {
@@ -64,7 +61,6 @@
             margin-bottom:15px;
             cursor:pointer;
         }
-
         .author-icon {
             width:48px;
             height:48px;
@@ -73,14 +69,17 @@
             background:#ddd;
             border:2px solid #D7C4A3;
         }
-
         .author-name {
             font-size:18px;
             font-weight:700;
             color:#2E7D32;
         }
+        .author-meta {
+            font-size:13px;
+            color:#777;
+        }
 
-        /* 右上の編集・削除ボタン */
+        /* 編集・削除ボタン */
         .post-actions {
             position:absolute;
             top:10px;
@@ -88,14 +87,12 @@
             display:flex;
             gap:12px;
         }
-
         .edit-icon, .delete-icon {
             font-size:22px;
             cursor:pointer;
             opacity:0.85;
             transition:0.1s;
         }
-
         .edit-icon:active, .delete-icon:active {
             transform:scale(0.85);
             opacity:0.5;
@@ -111,13 +108,11 @@
             border-radius: 12px;
             background: #ddd;
         }
-
         .slide-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-
         .slide-btn {
             position: absolute;
             top: 50%;
@@ -133,16 +128,19 @@
         .slide-btn:active {
             transform: translateY(-50%) scale(0.9);
         }
-
         #prevBtn { left: 10px; }
         #nextBtn { right: 10px; }
 
         .title {
             font-size:22px;
             font-weight:700;
+            margin-bottom:6px;
+        }
+        .category-label {
+            font-size:13px;
+            color:#2E7D32;
             margin-bottom:10px;
         }
-
         .desc {
             font-size:16px;
             margin-bottom:15px;
@@ -152,11 +150,16 @@
             margin-bottom:8px;
             font-size:16px;
         }
-
         .file a {
             color:#2E7D32;
             text-decoration:none;
             font-weight:600;
+        }
+
+        .meta {
+            margin-top:15px;
+            font-size:14px;
+            color:#555;
         }
 
         .like-btn {
@@ -169,7 +172,6 @@
         .like-btn:active {
             transform: scale(0.8);
         }
-
         .like-count {
             font-size:15px;
             margin-left:8px;
@@ -183,12 +185,14 @@
             border-radius:10px;
             margin-bottom:10px;
         }
-
         .comment-user {
             font-weight:700;
             margin-bottom:4px;
             color:#2E7D32;
             cursor:pointer;
+        }
+        .comment-text {
+            font-size:14px;
         }
 
         .comment-input {
@@ -198,7 +202,6 @@
             border-radius:10px;
             margin-top:10px;
         }
-
         .btn {
             width:100%;
             padding:14px;
@@ -215,22 +218,43 @@
         .btn:active {
             transform: scale(0.97);
         }
+
+        /* 下タブ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: white;
+            border-top: 2px solid #D7C4A3;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -3px 0 #D7C4A3;
+            z-index: 999;
+        }
+        .bottom-nav a {
+            text-decoration: none;
+            color: #4E342E;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .bottom-nav img {
+            width: 26px;
+            height: 26px;
+        }
     </style>
 </head>
+
 <body>
 
-<nav>
-    <div style="font-size:20px; font-weight:700; color:#2E7D32;">
-        🏕 ScoutNet
-    </div>
-
-    <div style="display:flex; align-items:center; gap:15px;">
-        <a href="home.html">ホーム</a>
-        <a href="newpost.html">投稿する</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
-    </div>
-</nav>
+<!-- 上ナビバー -->
+<div class="top-nav">
+    <img src="icons/logo.png">
+    <div class="top-nav-title">ScoutNet</div>
+</div>
 
 <div class="container">
     <div class="post-card">
@@ -238,29 +262,33 @@
         <!-- 投稿者情報 -->
         <div class="author-box" id="authorBox">
             <img id="authorIcon" class="author-icon">
-            <div id="authorName" class="author-name"></div>
+            <div>
+                <div id="authorName" class="author-name"></div>
+                <div id="authorMeta" class="author-meta"></div>
+            </div>
         </div>
 
-        <!-- 右上の編集・削除ボタン -->
+        <!-- 編集・削除ボタン -->
         <div class="post-actions" id="postActions" style="display:none;">
             <span class="edit-icon" id="editBtn">✏️</span>
             <span class="delete-icon" id="deleteBtn">🗑️</span>
         </div>
 
-        <!-- 画像スライダー -->
-        <div class="slider">
+        <!-- スライダー -->
+        <div class="slider" id="slider">
             <button class="slide-btn" id="prevBtn">←</button>
             <img id="slideImage" class="slide-img">
             <button class="slide-btn" id="nextBtn">→</button>
         </div>
 
         <div class="title" id="title"></div>
+        <div class="category-label" id="categoryLabel"></div>
         <div class="desc" id="desc"></div>
 
         <h3>📎 添付ファイル</h3>
         <div id="files"></div>
 
-        <p style="margin-top:15px; font-size:14px; color:#555;">
+        <p class="meta">
             投稿日時：<span id="date"></span>
         </p>
 
@@ -276,6 +304,19 @@
         <button class="btn" id="sendComment">コメントを送信</button>
 
     </div>
+</div>
+
+<!-- 下タブ -->
+<div class="bottom-nav">
+    <a href="home.html">
+        <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="newpost.html">
+        <img src="icons/add.png"><br>投稿
+    </a>
+    <a href="profile.html">
+        <img src="icons/user.png"><br>プロフィール
+    </a>
 </div>
 <script>
 /* ポップアップ（共通） */
@@ -320,7 +361,7 @@ const postId = params.get("id");
 const postRef = db.collection("posts").doc(postId);
 
 let currentUser = null;
-let currentUserRole = "user"; // ← 追加
+let currentUserRole = "user";
 let postData = null;
 let likeRef = null;
 
@@ -334,7 +375,7 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user.uid;
     likeRef = postRef.collection("likes").doc(currentUser);
 
-    /* ▼ ログインユーザーの role を取得 */
+    /* ログインユーザーの role を取得 */
     const userSnap = await db.collection("users").doc(currentUser).get();
     if (userSnap.exists) {
         currentUserRole = userSnap.data().role || "user";
@@ -359,6 +400,7 @@ postRef.get().then(async (snap) => {
 
     document.getElementById("title").textContent = post.title || "(タイトルなし)";
     document.getElementById("desc").textContent = post.description || "";
+    document.getElementById("categoryLabel").textContent = `カテゴリ：${post.category}`;
 
     /* 日付処理 */
     let createdAt = "日時不明";
@@ -371,12 +413,14 @@ postRef.get().then(async (snap) => {
     const userSnap = await db.collection("users").doc(post.createdBy).get();
     const authorNameEl = document.getElementById("authorName");
     const authorIconEl = document.getElementById("authorIcon");
+    const authorMetaEl = document.getElementById("authorMeta");
     const authorBox = document.getElementById("authorBox");
 
     if (userSnap.exists) {
         const u = userSnap.data();
         authorNameEl.textContent = u.name || "不明なユーザー";
-        authorIconEl.src = u.iconUrl || "https://via.placeholder.com/100?text=No+Image";
+        authorIconEl.src = u.iconUrl || "icons/user.png";
+        authorMetaEl.textContent = `${u.pref || ""} ${u.group || ""}`;
 
         authorBox.onclick = () => {
             location.href = `profile.html?uid=${post.createdBy}`;
@@ -402,7 +446,7 @@ postRef.get().then(async (snap) => {
         filesDiv.appendChild(div);
     });
 
-    /* ✏️🗑️ 編集・削除ボタン表示 */
+    /* 編集・削除ボタン */
     if (post.createdBy === currentUser || currentUserRole === "admin") {
         document.getElementById("postActions").style.display = "flex";
 
@@ -413,20 +457,25 @@ postRef.get().then(async (snap) => {
         document.getElementById("deleteBtn").onclick = deletePost;
     }
 
-    /* 画像スライダー */
+    /* 画像スライダー（thumbs 優先） */
     const slideImage = document.getElementById("slideImage");
-    let images = post.images || [];
+    let images = [];
+
+    if (post.thumbs && post.thumbs.length > 0) {
+        images = post.thumbs;
+    } else if (post.images && post.images.length > 0) {
+        images = post.images;
+    }
+
     let currentIndex = 0;
 
     function updateSlide() {
-        const slider = document.querySelector(".slider");
+        const slider = document.getElementById("slider");
 
         if (images.length > 0) {
             slideImage.src = images[currentIndex];
-            slideImage.style.display = "block";
             slider.style.display = "block";
         } else {
-            slideImage.style.display = "none";
             slider.style.display = "none";
         }
     }
@@ -446,7 +495,7 @@ postRef.get().then(async (snap) => {
     updateSlide();
 });
 
-/* ❤️ いいね数 */
+/* ❤️ いいね数リアルタイム */
 postRef.collection("likes").onSnapshot((snapshot) => {
     document.getElementById("likeCount").textContent = snapshot.size + "件";
 });
@@ -477,7 +526,7 @@ document.getElementById("likeBtn").onclick = async () => {
     }
 };
 
-/* 💬 コメント読み込み */
+/* 💬 コメント読み込み（リアルタイム） */
 postRef.collection("comments")
     .orderBy("createdAt", "asc")
     .onSnapshot(async (snapshot) => {
@@ -516,6 +565,7 @@ postRef.collection("comments")
             }
 
             const textDiv = document.createElement("div");
+            textDiv.className = "comment-text";
             textDiv.textContent = c.text;
 
             commentBox.appendChild(userDiv);
@@ -570,6 +620,16 @@ async function deletePost() {
         }
     }
 
+    /* サムネイル削除 */
+    if (postData.thumbs) {
+        for (let url of postData.thumbs) {
+            try {
+                const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
+                await storage.ref(path).delete();
+            } catch (e) {}
+        }
+    }
+
     /* ファイル削除 */
     if (postData.files) {
         for (let url of postData.files) {
@@ -605,6 +665,3 @@ async function deletePost() {
     }, 1500);
 }
 </script>
-
-</body>
-</html>
