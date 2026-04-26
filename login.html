@@ -31,12 +31,25 @@
             text-align:center;
             margin-bottom:20px;
         }
+        .input-wrap {
+            position: relative;
+        }
         input {
             width:100%;
             padding:12px;
             margin-bottom:12px;
             border:1px solid #D7C4A3;
             border-radius:10px;
+            font-size:15px;
+        }
+        .eye {
+            position:absolute;
+            right:12px;
+            top:50%;
+            transform:translateY(-50%);
+            cursor:pointer;
+            font-size:18px;
+            color:#6d4c41;
         }
         .btn {
             width:100%;
@@ -72,9 +85,17 @@
     <h2>ScoutNet ログイン</h2>
 
     <input type="email" id="email" placeholder="メールアドレス">
-    <input type="password" id="password" placeholder="パスワード">
+
+    <div class="input-wrap">
+        <input type="password" id="password" placeholder="パスワード">
+        <span class="eye" id="togglePw">👁</span>
+    </div>
 
     <button class="btn" id="loginBtn">ログイン</button>
+
+    <div class="link">
+        <a href="reset.html">パスワードを忘れた方はこちら</a>
+    </div>
 
     <div class="link">
         <a href="signup.html">新規登録はこちら</a>
@@ -116,6 +137,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+/* パスワードの目アイコン */
+document.getElementById("togglePw").onclick = () => {
+    const pw = document.getElementById("password");
+    pw.type = pw.type === "password" ? "text" : "password";
+};
 
 /* ログイン永続化 */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
