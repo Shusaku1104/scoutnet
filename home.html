@@ -5,7 +5,7 @@
     <title>ScoutNet - ホーム</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Firebase 8 -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -15,11 +15,11 @@
             font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
             background:#f5f5f5;
             margin:0;
-            padding:0 0 80px; /* ← 下タブの高さ確保 */
+            padding:0 0 80px;
             color:#4E342E;
         }
 
-        /* 上ナビバー（ロゴ固定） */
+        /* 上ナビバー */
         .top-nav {
             position: sticky;
             top: 0;
@@ -31,76 +31,41 @@
             align-items: center;
             gap: 10px;
         }
-        .top-nav img {
-            height: 28px;
-        }
+        .top-nav img { height: 28px; }
         .top-nav-title {
             font-size: 20px;
             font-weight: 700;
         }
 
-        /* カテゴリタブ */
-        nav {
+        /* カテゴリフィルター */
+        .category-bar {
             background:white;
             border-bottom:2px solid #D7C4A3;
+            padding:10px;
             position:sticky;
             top:56px;
             z-index:150;
-            padding:10px;
         }
-        nav .tab-scroll {
+        .category-scroll {
             display:flex;
             overflow-x:auto;
-            white-space:nowrap;
             gap:15px;
+            white-space:nowrap;
         }
-        nav .tab-scroll::-webkit-scrollbar {
-            display:none;
-        }
-        nav a, #categoryBtn {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            padding:8px 4px;
-            display:inline-block;
-        }
-        nav a.active {
-            color:#2E7D32;
-            border-bottom:3px solid #2E7D32;
-        }
-        #categoryBtn {
-            background:#2E7D32;
-            color:white;
+        .category-scroll::-webkit-scrollbar { display:none; }
+
+        .cat-btn {
             padding:8px 14px;
             border-radius:8px;
-            cursor:pointer;
-            border:none;
-        }
-
-        /* カテゴリメニュー */
-        #categoryMenu {
-            position:absolute;
-            left:20px;
-            top:120px;
+            border:1px solid #A5D6A7;
             background:white;
-            border:2px solid #D7C4A3;
-            border-radius:12px;
-            box-shadow:0 4px 0 #D7C4A3;
-            display:none;
-            width:150px;
-            z-index:300;
-        }
-        .category-item {
-            padding:12px;
+            font-weight:600;
             cursor:pointer;
-            border-bottom:1px solid #EEE;
         }
-        .category-item:hover {
-            background:#F1F8E9;
-        }
-        .category-active {
-            background:#C8E6C9 !important;
-            font-weight:700;
+        .cat-active {
+            background:#2E7D32;
+            color:white;
+            border-color:#2E7D32;
         }
 
         /* 投稿カード */
@@ -109,54 +74,40 @@
             margin:20px auto;
             padding:0 15px;
         }
-        .post {
+        .post-card {
             background:white;
             border:2px solid #D7C4A3;
             border-radius:16px;
-            padding:16px;
-            margin-bottom:20px;
+            padding:12px;
             box-shadow:0 4px 0 #D7C4A3;
+            margin-bottom:18px;
             cursor:pointer;
         }
-        .post img {
+        .thumb {
             width:100%;
+            height:200px;
+            object-fit:cover;
             border-radius:12px;
-            margin-bottom:10px;
-        }
-        .category-tag {
-            display:inline-block;
-            background:#E8F5E9;
-            color:#2E7D32;
-            padding:4px 10px;
-            border-radius:8px;
-            font-size:13px;
-            margin-bottom:6px;
-            border:1px solid #A5D6A7;
+            background:#ddd;
         }
         .title {
-            font-size:20px;
-            font-weight:600;
-            margin-bottom:8px;
+            font-size:18px;
+            font-weight:700;
+            margin-top:10px;
         }
-        .desc {
-            font-size:15px;
-            margin-bottom:10px;
+        .meta {
+            font-size:13px;
+            color:#777;
+            margin-top:4px;
         }
 
-        /* ページャー */
-        #pager {
+        #loading {
             text-align:center;
-            margin:20px 0;
-        }
-        #pager button {
-            padding:8px 14px;
-            margin:0 10px;
-            border-radius:8px;
-            border:1px solid #A5D6A7;
-            cursor:pointer;
+            padding:20px;
+            color:#777;
         }
 
-        /* 下タブ（インスタ風） */
+        /* 下タブ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -184,44 +135,29 @@
         }
     </style>
 </head>
+
 <body>
 
-<!-- 上ナビバー -->
+<!-- 上ナビ -->
 <div class="top-nav">
     <img src="icons/logo.png">
     <div class="top-nav-title">ScoutNet</div>
 </div>
 
-<!-- カテゴリタブ -->
-<nav>
-    <div class="tab-scroll">
-        <button id="categoryBtn">カテゴリ ▼</button>
-        <a href="home.html" class="active">ホーム</a>
-        <a href="about.html">このサイトについて</a>
-        <a href="newpost.html">投稿する</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
+<!-- カテゴリフィルター -->
+<div class="category-bar">
+    <div class="category-scroll">
+        <button class="cat-btn cat-active" data-cat="すべて">すべて</button>
+        <button class="cat-btn" data-cat="アウトドア">アウトドア</button>
+        <button class="cat-btn" data-cat="インドア">インドア</button>
+        <button class="cat-btn" data-cat="奉仕">奉仕</button>
+        <button class="cat-btn" data-cat="その他">その他</button>
     </div>
-</nav>
-
-<!-- カテゴリメニュー -->
-<div id="categoryMenu">
-    <div class="category-item" data-cat="すべて">すべて</div>
-    <div class="category-item" data-cat="アウトドア">アウトドア</div>
-    <div class="category-item" data-cat="インドア">インドア</div>
-    <div class="category-item" data-cat="奉仕">奉仕</div>
-    <div class="category-item" data-cat="その他">その他</div>
 </div>
 
 <!-- 投稿一覧 -->
-<div class="container">
-    <div id="loading">読み込み中…</div>
-    <div id="postList"></div>
-
-    <div id="pager">
-        <button id="prevBtn" disabled>前へ</button>
-        <button id="nextBtn" disabled>次へ</button>
-    </div>
+<div class="container" id="postList">
+    <p id="loading">読み込み中…</p>
 </div>
 
 <!-- 下タブ -->
@@ -238,7 +174,7 @@
 </div>
 
 <script>
-/* Firebase 設定 */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -249,122 +185,106 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.firestore();
-
-/* ログイン確認 */
-auth.onAuthStateChanged(user => {
-    if (!user) location.href = "login.html";
-});
 
 /* UI */
 const postList = document.getElementById("postList");
 const loading = document.getElementById("loading");
-const categoryBtn = document.getElementById("categoryBtn");
-const categoryMenu = document.getElementById("categoryMenu");
 
 let currentCategory = "すべて";
 let lastDoc = null;
-let firstDoc = null;
-const perPage = 10;
+let isLoading = false;
+const limit = 8;
 
-/* カテゴリメニュー開閉 */
-categoryBtn.addEventListener("click", () => {
-    categoryMenu.style.display =
-        categoryMenu.style.display === "block" ? "none" : "block";
-});
+/* カテゴリ切り替え */
+document.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("cat-active"));
+        btn.classList.add("cat-active");
 
-/* カテゴリ選択 */
-document.querySelectorAll(".category-item").forEach(item => {
-    item.addEventListener("click", () => {
-        currentCategory = item.dataset.cat;
-
-        document.querySelectorAll(".category-item")
-            .forEach(i => i.classList.remove("category-active"));
-        item.classList.add("category-active");
-
-        categoryMenu.style.display = "none";
-
+        currentCategory = btn.dataset.cat;
         lastDoc = null;
-        firstDoc = null;
-
+        postList.innerHTML = "";
         loadPosts();
     });
 });
 
 /* 投稿読み込み */
-async function loadPosts(direction = "none") {
-    postList.innerHTML = "";
+async function loadPosts() {
+    if (isLoading) return;
+    isLoading = true;
+
     loading.style.display = "block";
 
-    let ref = db.collection("posts").orderBy("createdAt", "desc");
+    let ref = db.collection("posts")
+        .orderBy("createdAt", "desc")
+        .limit(limit);
 
     if (currentCategory !== "すべて") {
-        ref = ref.where("category", "==", currentCategory)
-                 .orderBy("createdAt", "desc");
+        ref = db.collection("posts")
+            .where("category", "==", currentCategory)
+            .orderBy("createdAt", "desc")
+            .limit(limit);
     }
 
-    if (direction === "next" && lastDoc) ref = ref.startAfter(lastDoc);
-    if (direction === "prev" && firstDoc) ref = ref.endBefore(firstDoc);
+    if (lastDoc) ref = ref.startAfter(lastDoc);
 
-    const snap = await ref.limit(perPage).get();
+    const snap = await ref.get();
 
     loading.style.display = "none";
 
     if (snap.empty) {
-        postList.innerHTML = `
-            <p style="text-align:center; margin-top:30px;">
-                まだ投稿がありません<br>
-                <a href="newpost.html" style="color:#2E7D32; font-weight:700;">投稿してみる？</a>
-            </p>`;
+        if (!lastDoc) {
+            postList.innerHTML = "<p style='text-align:center; color:#777;'>投稿がありません。</p>";
+        }
         return;
     }
 
-    firstDoc = snap.docs[0];
     lastDoc = snap.docs[snap.docs.length - 1];
 
     snap.docs.forEach(doc => {
-        const post = doc.data();
+        const p = doc.data();
         const id = doc.id;
 
-        const div = document.createElement("div");
-        div.className = "post";
+        const card = document.createElement("div");
+        card.className = "post-card";
+        card.onclick = () => location.href = `post.html?id=${id}`;
 
-        if (post.images && post.images.length > 0) {
-            const img = document.createElement("img");
-            img.src = post.images[0];
-            div.appendChild(img);
-        }
-
-        const tag = document.createElement("div");
-        tag.className = "category-tag";
-        tag.textContent = post.category;
-        div.appendChild(tag);
+        /* サムネイル優先 */
+        const img = document.createElement("img");
+        img.className = "thumb";
+        img.src = (p.thumbs && p.thumbs.length > 0)
+            ? p.thumbs[0]
+            : (p.images && p.images.length > 0 ? p.images[0] : "icons/noimage.png");
 
         const title = document.createElement("div");
         title.className = "title";
-        title.textContent = post.title;
-        div.appendChild(title);
+        title.textContent = p.title || "(タイトルなし)";
 
-        const desc = document.createElement("div");
-        desc.className = "desc";
-        desc.textContent = post.description;
-        div.appendChild(desc);
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = p.createdAt?.toDate
+            ? p.createdAt.toDate().toLocaleString()
+            : "日時不明";
 
-        div.addEventListener("click", () => {
-            location.href = "post.html?id=" + id;
-        });
+        card.appendChild(img);
+        card.appendChild(title);
+        card.appendChild(meta);
 
-        postList.appendChild(div);
+        postList.appendChild(card);
     });
 
-    document.getElementById("prevBtn").disabled = !firstDoc;
-    document.getElementById("nextBtn").disabled = snap.size < perPage;
+    isLoading = false;
 }
 
-document.getElementById("nextBtn").onclick = () => loadPosts("next");
-document.getElementById("prevBtn").onclick = () => loadPosts("prev");
+/* 無限スクロール */
+window.addEventListener("scroll", () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        loadPosts();
+    }
+});
 
+/* 初回読み込み */
 loadPosts();
 </script>
 
