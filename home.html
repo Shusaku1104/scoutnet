@@ -115,7 +115,7 @@
             color:#777;
         }
 
-        /* 下タブ */
+        /* 下タブ（5つ） */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -168,16 +168,22 @@
     <p id="loading">読み込み中…</p>
 </div>
 
-<!-- 下タブ -->
+<!-- 下タブ（5つ） -->
 <div class="bottom-nav">
     <a href="home.html">
         <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="about.html">
+        <img src="icons/info.png"><br>このサイト
     </a>
     <a href="newpost.html">
         <img src="icons/add.png"><br>投稿
     </a>
     <a href="profile.html">
         <img src="icons/user.png"><br>プロフィール
+    </a>
+    <a href="notify.html">
+        <img src="icons/bell.png"><br>通知
     </a>
 </div>
 
@@ -258,7 +264,6 @@ async function loadPosts() {
         card.className = "post-card";
         card.onclick = () => location.href = `post.html?id=${id}`;
 
-        /* サムネイル優先 */
         const img = document.createElement("img");
         img.className = "thumb";
         img.src = (p.thumbs && p.thumbs.length > 0)
