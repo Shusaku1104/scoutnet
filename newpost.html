@@ -38,32 +38,7 @@
             font-weight: 700;
         }
 
-        /* スライド式タブ */
-        nav {
-            background:white;
-            border-bottom:2px solid #D7C4A3;
-            position:sticky;
-            top:56px;
-            z-index:150;
-            padding:10px;
-        }
-        nav .tab-scroll {
-            display:flex;
-            overflow-x:auto;
-            white-space:nowrap;
-            gap:15px;
-        }
-        nav a {
-            color:#4E342E;
-            text-decoration:none;
-            font-weight:600;
-            padding:8px 4px;
-        }
-        nav a.active {
-            color:#2E7D32;
-            border-bottom:3px solid #2E7D32;
-        }
-
+        /* 投稿フォーム */
         .container {
             max-width:600px;
             margin:20px auto;
@@ -186,7 +161,7 @@
             transition:0.2s;
         }
 
-        /* 下タブ */
+        /* 下タブ（5つ） */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -223,16 +198,7 @@
     <div class="top-nav-title">ScoutNet</div>
 </div>
 
-<!-- スライド式タブ -->
-<nav>
-    <div class="tab-scroll">
-        <a href="home.html">ホーム</a>
-        <a href="about.html">このサイトについて</a>
-        <a href="newpost.html" class="active">投稿する</a>
-        <a href="profile.html">プロフィール</a>
-        <a href="notifications.html">🔔 通知</a>
-    </div>
-</nav>
+<!-- ※ 上タブ（nav）は削除済み：新仕様では不要 -->
 
 <div class="container">
     <div class="form-box">
@@ -272,16 +238,22 @@
     </div>
 </div>
 
-<!-- 下タブ -->
+<!-- 下タブ（5つ） -->
 <div class="bottom-nav">
     <a href="home.html">
         <img src="icons/home.png"><br>ホーム
+    </a>
+    <a href="about.html">
+        <img src="icons/info.png"><br>このサイト
     </a>
     <a href="newpost.html">
         <img src="icons/add.png"><br>投稿
     </a>
     <a href="profile.html">
         <img src="icons/user.png"><br>プロフィール
+    </a>
+    <a href="notifications.html">
+        <img src="icons/bell.png"><br>通知
     </a>
 </div>
 
