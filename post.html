@@ -319,9 +319,22 @@ TYPE html>
     </a>
 </div>
 <script>
-/* ポップアップ（共通） */
+/* ▼ XSS対策（必須） */
+function escapeHTML(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* ▼ ポップアップ（完全版） */
 function showPopup(message) {
     const msg = document.createElement("div");
+    msg.innerText = message;
+
     msg.style.position = "fixed";
     msg.style.top = "50%";
     msg.style.left = "50%";
@@ -334,13 +347,12 @@ function showPopup(message) {
     msg.style.fontWeight = "700";
     msg.style.color = "#2E7D32";
     msg.style.zIndex = "9999";
-    msg.innerText = message;
 
     document.body.appendChild(msg);
     setTimeout(() => msg.remove(), 1500);
 }
 
-/* Firebase 設定 */
+/* ▼ Firebase 設定 */
 const firebaseConfig = {
   apiKey: "AIzaSyD121KvHW6Dtda16wFLOQ4IGOManS_bPl4",
   authDomain: "scoutnet12.firebaseapp.com",
@@ -355,7 +367,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-/* 投稿ID取得 */
+/* ▼ 投稿ID取得 */
 const params = new URLSearchParams(location.search);
 const postId = params.get("id");
 const postRef = db.collection("posts").doc(postId);
@@ -365,7 +377,7 @@ let currentUserRole = "user";
 let postData = null;
 let likeRef = null;
 
-/* ログイン確認 */
+/* ▼ ログイン確認 */
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         location.href = "login.html";
@@ -375,19 +387,17 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user.uid;
     likeRef = postRef.collection("likes").doc(currentUser);
 
-    /* ログインユーザーの role を取得 */
     const userSnap = await db.collection("users").doc(currentUser).get();
     if (userSnap.exists) {
         currentUserRole = userSnap.data().role || "user";
     }
 
-    /* いいね状態の監視 */
     likeRef.onSnapshot((snap) => {
         document.getElementById("likeBtn").textContent = snap.exists ? "❤️" : "🤍";
     });
 });
 
-/* 投稿読み込み */
+/* ▼ 投稿読み込み */
 postRef.get().then(async (snap) => {
     if (!snap.exists) {
         showPopup("投稿が見つかりません");
@@ -398,18 +408,19 @@ postRef.get().then(async (snap) => {
     const post = snap.data();
     postData = post;
 
-    document.getElementById("title").textContent = post.title || "(タイトルなし)";
-    document.getElementById("desc").textContent = post.description || "";
-    document.getElementById("categoryLabel").textContent = `カテゴリ：${post.category}`;
+    /* ▼ XSS対策入りの表示 */
+    document.getElementById("title").innerText = post.title || "(タイトルなし)";
+    document.getElementById("desc").innerHTML = escapeHTML(post.description || "");
+    document.getElementById("categoryLabel").innerText = `カテゴリ：${post.category}`;
 
-    /* 日付処理 */
+    /* ▼ 日付 */
     let createdAt = "日時不明";
     if (post.createdAt?.toMillis) {
         createdAt = new Date(post.createdAt.toMillis()).toLocaleString();
     }
-    document.getElementById("date").textContent = createdAt;
+    document.getElementById("date").innerText = createdAt;
 
-    /* 投稿者情報 */
+    /* ▼ 投稿者情報 */
     const userSnap = await db.collection("users").doc(post.createdBy).get();
     const authorNameEl = document.getElementById("authorName");
     const authorIconEl = document.getElementById("authorIcon");
@@ -418,18 +429,15 @@ postRef.get().then(async (snap) => {
 
     if (userSnap.exists) {
         const u = userSnap.data();
-        authorNameEl.textContent = u.name || "不明なユーザー";
+        authorNameEl.innerText = u.name || "不明なユーザー";
         authorIconEl.src = u.iconUrl || "icons/user.png";
-        authorMetaEl.textContent = `${u.pref || ""} ${u.group || ""}`;
-
-        authorBox.onclick = () => {
-            location.href = `profile.html?uid=${post.createdBy}`;
-        };
+        authorMetaEl.innerText = `${u.pref || ""} ${u.group || ""}`;
+        authorBox.onclick = () => location.href = `profile.html?uid=${post.createdBy}`;
     } else {
-        authorNameEl.textContent = "不明なユーザー";
+        authorNameEl.innerText = "不明なユーザー";
     }
 
-    /* 添付ファイル */
+    /* ▼ 添付ファイル */
     const filesDiv = document.getElementById("files");
     (post.files || []).forEach(url => {
         const fileName = decodeURIComponent(url.split("/").pop().split("?")[0]);
@@ -439,39 +447,27 @@ postRef.get().then(async (snap) => {
         const a = document.createElement("a");
         a.href = url;
         a.target = "_blank";
-        a.textContent = fileName;
+        a.innerText = fileName;
 
         div.appendChild(document.createTextNode("📄 "));
         div.appendChild(a);
         filesDiv.appendChild(div);
     });
 
-    /* 編集・削除ボタン */
+    /* ▼ 編集・削除ボタン */
     if (post.createdBy === currentUser || currentUserRole === "admin") {
         document.getElementById("postActions").style.display = "flex";
-
-        document.getElementById("editBtn").onclick = () => {
-            location.href = `editpost.html?id=${postId}`;
-        };
-
+        document.getElementById("editBtn").onclick = () => location.href = `editpost.html?id=${postId}`;
         document.getElementById("deleteBtn").onclick = deletePost;
     }
 
-    /* 画像スライダー（thumbs 優先） */
+    /* ▼ 画像スライダー */
     const slideImage = document.getElementById("slideImage");
-    let images = [];
-
-    if (post.thumbs && post.thumbs.length > 0) {
-        images = post.thumbs;
-    } else if (post.images && post.images.length > 0) {
-        images = post.images;
-    }
-
+    let images = post.thumbs?.length ? post.thumbs : post.images || [];
     let currentIndex = 0;
 
     function updateSlide() {
         const slider = document.getElementById("slider");
-
         if (images.length > 0) {
             slideImage.src = images[currentIndex];
             slider.style.display = "block";
@@ -481,13 +477,13 @@ postRef.get().then(async (snap) => {
     }
 
     document.getElementById("prevBtn").onclick = () => {
-        if (images.length === 0) return;
+        if (!images.length) return;
         currentIndex = (currentIndex - 1 + images.length) % images.length;
         updateSlide();
     };
 
     document.getElementById("nextBtn").onclick = () => {
-        if (images.length === 0) return;
+        if (!images.length) return;
         currentIndex = (currentIndex + 1) % images.length;
         updateSlide();
     };
@@ -495,12 +491,12 @@ postRef.get().then(async (snap) => {
     updateSlide();
 });
 
-/* ❤️ いいね数リアルタイム */
+/* ▼ いいね数リアルタイム */
 postRef.collection("likes").onSnapshot((snapshot) => {
-    document.getElementById("likeCount").textContent = snapshot.size + "件";
+    document.getElementById("likeCount").innerText = snapshot.size + "件";
 });
 
-/* ❤️ いいね押したとき */
+/* ▼ いいね押したとき */
 document.getElementById("likeBtn").onclick = async () => {
     if (!likeRef) return;
 
@@ -526,7 +522,7 @@ document.getElementById("likeBtn").onclick = async () => {
     }
 };
 
-/* 💬 コメント読み込み（リアルタイム） */
+/* ▼ コメント読み込み（XSS対策入り） */
 postRef.collection("comments")
     .orderBy("createdAt", "asc")
     .onSnapshot(async (snapshot) => {
@@ -535,10 +531,7 @@ postRef.collection("comments")
         commentsDiv.innerHTML = "";
 
         const userIds = [...new Set(snapshot.docs.map(doc => doc.data().user))];
-
-        const userSnaps = await Promise.all(
-            userIds.map(uid => db.collection("users").doc(uid).get())
-        );
+        const userSnaps = await Promise.all(userIds.map(uid => db.collection("users").doc(uid).get()));
 
         const userMap = {};
         userSnaps.forEach((snap, i) => {
@@ -554,33 +547,27 @@ postRef.collection("comments")
 
             const userDiv = document.createElement("div");
             userDiv.className = "comment-user";
-
+            userDiv.innerText = userData ? userData.name : "不明なユーザー";
             if (userData) {
-                userDiv.textContent = userData.name;
-                userDiv.onclick = () => {
-                    location.href = `profile.html?uid=${c.user}`;
-                };
-            } else {
-                userDiv.textContent = "不明なユーザー";
+                userDiv.onclick = () => location.href = `profile.html?uid=${c.user}`;
             }
 
             const textDiv = document.createElement("div");
             textDiv.className = "comment-text";
-            textDiv.textContent = c.text;
+            textDiv.innerHTML = escapeHTML(c.text);  // ← XSS対策
 
             commentBox.appendChild(userDiv);
             commentBox.appendChild(textDiv);
-
             commentsDiv.appendChild(commentBox);
         });
     });
 
-/* 💬 コメント送信 */
+/* ▼ コメント送信 */
 document.getElementById("sendComment").onclick = async () => {
     const text = document.getElementById("commentInput").value.trim();
     if (!text || !currentUser) return;
 
-    document.getElementById("sendComment").textContent = "送信中…";
+    document.getElementById("sendComment").innerText = "送信中…";
     document.getElementById("sendComment").disabled = true;
 
     await postRef.collection("comments").add({
@@ -590,7 +577,7 @@ document.getElementById("sendComment").onclick = async () => {
     });
 
     document.getElementById("commentInput").value = "";
-    document.getElementById("sendComment").textContent = "コメントを送信";
+    document.getElementById("sendComment").innerText = "コメントを送信";
     document.getElementById("sendComment").disabled = false;
 
     showPopup("コメントを送信しました！");
@@ -606,62 +593,52 @@ document.getElementById("sendComment").onclick = async () => {
     }
 };
 
-/* 🗑 投稿削除（完全版） */
+/* ▼ 投稿削除（完全版） */
 async function deletePost() {
     if (!confirm("本当に削除しますか？")) return;
 
-    /* 画像削除 */
     if (postData.images) {
         for (let url of postData.images) {
             try {
                 const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
                 await storage.ref(path).delete();
-            } catch (e) {}
+            } catch {}
         }
     }
 
-    /* サムネイル削除 */
     if (postData.thumbs) {
         for (let url of postData.thumbs) {
             try {
                 const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
                 await storage.ref(path).delete();
-            } catch (e) {}
+            } catch {}
         }
     }
 
-    /* ファイル削除 */
     if (postData.files) {
         for (let url of postData.files) {
             try {
                 const path = decodeURIComponent(url.split("/o/")[1].split("?")[0]);
                 await storage.ref(path).delete();
-            } catch (e) {}
+            } catch {}
         }
     }
 
-    /* likes 削除 */
     const likes = await postRef.collection("likes").get();
     for (const d of likes.docs) await d.ref.delete();
 
-    /* comments 削除 */
     const comments = await postRef.collection("comments").get();
     for (const d of comments.docs) await d.ref.delete();
 
-    /* 通知削除 */
     const noti = await db.collection("notifications")
         .where("postId", "==", postId)
         .get();
 
     for (const d of noti.docs) await d.ref.delete();
 
-    /* 投稿本体削除 */
     await postRef.delete();
 
     showPopup("投稿を削除しました！");
-
-    setTimeout(() => {
-        location.href = "home.html";
-    }, 1500);
+    setTimeout(() => location.href = "home.html", 1500);
 }
 </script>
