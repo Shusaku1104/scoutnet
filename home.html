@@ -224,21 +224,22 @@ document.querySelectorAll(".cat-btn").forEach(btn => {
     });
 });
 
-/* 投稿読み込み */
+/* 投稿読み込み（カテゴリ完全対応版） */
 async function loadPosts() {
     if (isLoading) return;
     isLoading = true;
 
     loading.style.display = "block";
 
-    let ref = db.collection("posts")
-        .orderBy("createdAt", "desc")
-        .limit(limit);
+    let ref;
 
-    if (currentCategory !== "すべて") {
+    if (currentCategory === "すべて") {
+        ref = db.collection("posts")
+            .orderBy("createdAt", "desc")
+            .limit(limit);
+    } else {
         ref = db.collection("posts")
             .where("category", "==", currentCategory)
-            .orderBy("createdAt", "desc")
             .limit(limit);
     }
 
@@ -252,6 +253,7 @@ async function loadPosts() {
         if (!lastDoc) {
             postList.innerHTML = "<p style='text-align:center; color:#777;'>投稿がありません。</p>";
         }
+        isLoading = false;
         return;
     }
 
